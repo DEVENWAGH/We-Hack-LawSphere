@@ -8,7 +8,7 @@ router.get("/", (req, res) => {
     status: "ok",
     message: "LawSphere API is running",
     env: process.env.NODE_ENV,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 

@@ -6,14 +6,14 @@ const connectDB = async () => {
       console.log("MongoDB already connected");
       return;
     }
-    
+
     // Add more robust error handling and retry logic
     const options = {
       useNewUrlParser: true,
       useUnifiedTopology: true,
       serverSelectionTimeoutMS: 5000, // Reduced timeout for serverless environment
       bufferCommands: false, // Disable mongoose buffering
-      maxPoolSize: 5 // Smaller pool size for serverless
+      maxPoolSize: 5, // Smaller pool size for serverless
     };
 
     const conn = await mongoose.connect(process.env.MONGODB_URI, options);

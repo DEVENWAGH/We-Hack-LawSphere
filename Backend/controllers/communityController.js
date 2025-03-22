@@ -310,11 +310,15 @@ export const addReply = async (req, res) => {
     topic.replies = topic.replies ? topic.replies.length : 1;
 
     // Emit WebSocket event for new reply (safely)
-    safeEmitSocketEvent("new-reply", {
-      topicId,
-      reply: newReply,
-      parentId,
-    }, `topic-${topicId}`);
+    safeEmitSocketEvent(
+      "new-reply",
+      {
+        topicId,
+        reply: newReply,
+        parentId,
+      },
+      `topic-${topicId}`
+    );
 
     res.json({
       success: true,
@@ -471,11 +475,15 @@ export const upvoteReply = async (req, res) => {
     }
 
     // Emit WebSocket event for reply vote update (safely)
-    safeEmitSocketEvent("reply-vote-update", {
-      topicId,
-      replyId,
-      voteScore,
-    }, `topic-${topicId}`);
+    safeEmitSocketEvent(
+      "reply-vote-update",
+      {
+        topicId,
+        replyId,
+        voteScore,
+      },
+      `topic-${topicId}`
+    );
 
     res.json({
       success: true,
@@ -547,11 +555,15 @@ export const downvoteReply = async (req, res) => {
     }
 
     // Emit WebSocket event for reply vote update (safely)
-    safeEmitSocketEvent("reply-vote-update", {
-      topicId,
-      replyId,
-      voteScore,
-    }, `topic-${topicId}`);
+    safeEmitSocketEvent(
+      "reply-vote-update",
+      {
+        topicId,
+        replyId,
+        voteScore,
+      },
+      `topic-${topicId}`
+    );
 
     res.json({
       success: true,

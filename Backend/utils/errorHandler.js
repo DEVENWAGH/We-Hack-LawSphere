@@ -11,7 +11,7 @@ export const asyncHandler = (fn) => async (req, res, next) => {
     res.status(500).json({
       success: false,
       message: "Server error occurred",
-      error: process.env.NODE_ENV === "development" ? error.message : undefined
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
 };

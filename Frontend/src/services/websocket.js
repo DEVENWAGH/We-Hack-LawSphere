@@ -10,7 +10,7 @@ const communitySocket = io(`${API_URL}/community`, {
   reconnection: true,
   reconnectionAttempts: 5,
   reconnectionDelay: 1000,
-  timeout: 10000
+  timeout: 10000,
 });
 
 // Connection event handlers
@@ -35,7 +35,7 @@ const socketFallback = {
   connected: false,
   emit: () => console.log("Socket fallback: emit called"),
   on: () => console.log("Socket fallback: on called"),
-  off: () => console.log("Socket fallback: off called")
+  off: () => console.log("Socket fallback: off called"),
 };
 
 // Event handlers setup - to be called from UI components
@@ -96,7 +96,9 @@ const connectWebSocket = () => {
       if (!import.meta.env.PROD) {
         communitySocket.connect();
       } else {
-        console.log("WebSocket connections not supported in production. Using fallback mode.");
+        console.log(
+          "WebSocket connections not supported in production. Using fallback mode."
+        );
       }
     }
   } catch (error) {
