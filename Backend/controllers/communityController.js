@@ -1,5 +1,4 @@
 import TopicModel from "../models/Topic.js";
-import { communityNamespace } from "../server.js";
 
 // Create an in-memory store for topics during development
 const mockTopics = [
@@ -68,6 +67,21 @@ const mockTopics = [
       "Just wanted to share my success story of winning my security deposit case in small claims court. Happy to answer questions about the process!",
   },
 ];
+
+// Helper to safely emit socket events (works in both environments)
+const safeEmitSocketEvent = (event, data, room = null) => {
+  try {
+    if (global.communityNamespace) {
+      if (room) {
+        global.communityNamespace.to(room).emit(event, data);
+      } else {
+        global.communityNamespace.emit(event, data);
+      }
+    }
+  } catch (error) {
+    console.log(`Socket emit error (${event}):`, error.message);
+  }
+};
 
 /**
  * @desc    Get forum topics (with filters)
@@ -199,8 +213,8 @@ export const createTopic = async (req, res) => {
     // Add to our mock data store
     mockTopics.unshift(newTopic); // Add to beginning of array so it appears first
 
-    // Emit WebSocket event for new topic
-    communityNamespace.emit("new-topic", newTopic);
+    // Emit WebSocket event for new topic (safely)
+    safeEmitSocketEvent("new-topic", newTopic);
 
     res.status(201).json({
       success: true,
@@ -295,12 +309,12 @@ export const addReply = async (req, res) => {
     // Increment reply count
     topic.replies = topic.replies ? topic.replies.length : 1;
 
-    // Emit WebSocket event for new reply
-    communityNamespace.to(`topic-${topicId}`).emit("new-reply", {
+    // Emit WebSocket event for new reply (safely)
+    safeEmitSocketEvent("new-reply", {
       topicId,
       reply: newReply,
       parentId,
-    });
+    }, `topic-${topicId}`);
 
     res.json({
       success: true,
@@ -337,8 +351,8 @@ export const upvoteTopic = async (req, res) => {
     // Increment vote score
     topic.voteScore += 1;
 
-    // Emit WebSocket event for topic vote update
-    communityNamespace.emit("topic-vote-update", {
+    // Emit WebSocket event for topic vote update (safely)
+    safeEmitSocketEvent("topic-vote-update", {
       topicId,
       voteScore: topic.voteScore,
     });
@@ -381,8 +395,8 @@ export const downvoteTopic = async (req, res) => {
     // Decrement vote score
     topic.voteScore -= 1;
 
-    // Emit WebSocket event for topic vote update
-    communityNamespace.emit("topic-vote-update", {
+    // Emit WebSocket event for topic vote update (safely)
+    safeEmitSocketEvent("topic-vote-update", {
       topicId,
       voteScore: topic.voteScore,
     });
@@ -456,12 +470,12 @@ export const upvoteReply = async (req, res) => {
       });
     }
 
-    // Emit WebSocket event for reply vote update
-    communityNamespace.to(`topic-${topicId}`).emit("reply-vote-update", {
+    // Emit WebSocket event for reply vote update (safely)
+    safeEmitSocketEvent("reply-vote-update", {
       topicId,
       replyId,
       voteScore,
-    });
+    }, `topic-${topicId}`);
 
     res.json({
       success: true,
@@ -532,12 +546,12 @@ export const downvoteReply = async (req, res) => {
       });
     }
 
-    // Emit WebSocket event for reply vote update
-    communityNamespace.to(`topic-${topicId}`).emit("reply-vote-update", {
+    // Emit WebSocket event for reply vote update (safely)
+    safeEmitSocketEvent("reply-vote-update", {
       topicId,
       replyId,
       voteScore,
-    });
+    }, `topic-${topicId}`);
 
     res.json({
       success: true,
