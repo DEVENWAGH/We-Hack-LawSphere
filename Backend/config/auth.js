@@ -1,4 +1,4 @@
-import { Auth } from "@auth/express";
+import { ExpressAuth } from "@auth/express";
 import jwt from "jsonwebtoken";
 import UserModel from "../models/User.js";
 
@@ -45,7 +45,7 @@ export const admin = (req, res, next) => {
 
 export const initAuth = (app) => {
   // Configure Auth.js v5
-  const authHandler = Auth({
+  const authHandler = ExpressAuth({
     secret: process.env.AUTH_SECRET,
     trustHost: true,
     // Using session-based auth instead of MongoDB adapter

@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "axios": "^1.8.4",
+    "lawsphere": "file:",
     "marked": "^15.0.7"
   },
   "devDependencies": {
