@@ -1,4 +1,5 @@
 import axios from "axios";
+import { getCurrentLanguage } from "../utils/translations.js";
 
 const API_URL = import.meta.env.PROD
   ? "https://api.lawsphere.org/api" // Change to your production API URL
@@ -9,10 +10,11 @@ const api = axios.create({
   baseURL: API_URL,
   headers: {
     "Content-Type": "application/json",
+    "Accept-Language": getCurrentLanguage() || "en",
   },
 });
 
-// Add request interceptor to include auth token
+// Add request interceptor to include auth token and current language
 api.interceptors.request.use(
   (config) => {
     const user = localStorage.getItem("user");
@@ -28,6 +30,9 @@ api.interceptors.request.use(
         localStorage.removeItem("user");
       }
     }
+    // Always use the current language - only en or hi now
+    const currentLang = getCurrentLanguage();
+    config.headers["Accept-Language"] = currentLang;
     return config;
   },
   (error) => Promise.reject(error)

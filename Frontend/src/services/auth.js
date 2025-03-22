@@ -1,4 +1,5 @@
 import { userService } from "./api.js";
+import { translate } from "../utils/translations.js";
 
 export function setupAuth() {
   const loginButton = document.getElementById("login-btn");
@@ -27,8 +28,12 @@ export function setupAuth() {
       user.name
     }" onerror="this.src='/lawyer.png'" crossorigin="anonymous">
         </div>
-        <span>Welcome, ${user.name}</span>
-        <button id="logout-btn" class="btn btn-outline">Logout</button>
+        <span><span data-i18n="welcome">${translate("welcome")}</span>, ${
+      user.name
+    }</span>
+        <button id="logout-btn" class="btn btn-outline" data-i18n="logout">${translate(
+          "logout"
+        )}</button>
       </div>
     `;
 

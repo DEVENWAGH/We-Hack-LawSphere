@@ -1,38 +1,54 @@
+import { translate } from "../utils/translations.js";
+
 export function renderHomePage() {
   const mainContent = document.getElementById("main-content");
 
   mainContent.innerHTML = `
     <section class="hero">
-      <h2>Access to Legal Aid Made Simple</h2>
-      <p>Connect with affordable legal services and pro bono lawyers. Get the legal help you need.</p>
+      <h2 data-i18n="heroTitle">${translate("heroTitle")}</h2>
+      <p data-i18n="heroDescription">${translate("heroDescription")}</p>
       <div class="hero-buttons">
-        <button class="btn btn-light" id="find-lawyer-btn">Find a Lawyer</button>
-        <button class="btn btn-outline-light" id="ask-ai-btn">Ask AI Assistant</button>
+        <button class="btn btn-light" id="find-lawyer-btn" data-i18n="findLawyer">${translate(
+          "findLawyer"
+        )}</button>
+        <button class="btn btn-outline-light" id="ask-ai-btn" data-i18n="askAi">${translate(
+          "askAi"
+        )}</button>
       </div>
     </section>
     
     <section>
-      <h2 class="section-title">Our Services</h2>
+      <h2 class="section-title" data-i18n="ourServices">${translate(
+        "ourServices"
+      )}</h2>
       <div class="features-grid">
         <div class="feature-card card" id="lawyer-directory-card">
           <i class="fas fa-user-tie"></i>
-          <h3>Lawyer Directory</h3>
-          <p>Find and connect with pro bono lawyers and affordable legal services in your area.</p>
+          <h3 data-i18n="lawyerDirectory">${translate("lawyerDirectory")}</h3>
+          <p data-i18n="lawyerDirectoryDesc">${translate(
+            "lawyerDirectoryDesc"
+          )}</p>
         </div>
         <div class="feature-card card" id="ai-assistant-card">
           <i class="fas fa-robot"></i>
-          <h3>AI Legal Assistant</h3>
-          <p>Get instant answers to common legal questions through our AI-powered assistant.</p>
+          <h3 data-i18n="aiAssistantService">${translate(
+            "aiAssistantService"
+          )}</h3>
+          <p data-i18n="aiAssistantDesc">${translate("aiAssistantDesc")}</p>
         </div>
         <div class="feature-card card" id="resource-library-card">
           <i class="fas fa-book-open"></i>
-          <h3>Resource Library</h3>
-          <p>Access guides, documents, and educational materials on various legal topics.</p>
+          <h3 data-i18n="resourceLibrary">${translate("resourceLibrary")}</h3>
+          <p data-i18n="resourceLibraryDesc">${translate(
+            "resourceLibraryDesc"
+          )}</p>
         </div>
         <div class="feature-card card" id="community-forums-card">
           <i class="fas fa-comments"></i>
-          <h3>Community Forums</h3>
-          <p>Join discussions, share experiences, and learn from others facing similar legal issues.</p>
+          <h3 data-i18n="communityForums">${translate("communityForums")}</h3>
+          <p data-i18n="communityForumsDesc">${translate(
+            "communityForumsDesc"
+          )}</p>
         </div>
       </div>
     </section>
@@ -126,8 +142,10 @@ export function renderFooter() {
       <div class="container">
         <div class="footer-content">
           <div class="footer-section about">
-            <h2>About LawSphere</h2>
-            <p>LawSphere connects those in need with pro bono lawyers and affordable legal services.</p>
+            <h2 data-i18n="aboutLawSphere">${translate("aboutLawSphere")}</h2>
+            <p data-i18n="aboutLawSphereDesc">${translate(
+              "aboutLawSphereDesc"
+            )}</p>
             <div class="social-links">
               <a href="https://x.com/LawSphere123" target="_blank" class="social-link twitter-x">
                 <svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512" fill="currentColor">
@@ -139,25 +157,37 @@ export function renderFooter() {
             </div>
           </div>
           <div class="footer-section links">
-            <h2>Quick Links</h2>
+            <h2 data-i18n="quickLinks">${translate("quickLinks")}</h2>
             <ul>
-              <li><a href="#" data-page="home">Home</a></li>
-              <li><a href="#" data-page="lawyers">Find a Lawyer</a></li>
-              <li><a href="#" data-page="resources">Resources</a></li>
-              <li><a href="#" data-page="community">Community</a></li>
-              <li><a href="#" data-page="ai-assistant">AI Assistant</a></li>
+              <li><a href="#" data-page="home" data-i18n="home">${translate(
+                "home"
+              )}</a></li>
+              <li><a href="#" data-page="lawyers" data-i18n="findLawyer">${translate(
+                "findLawyer"
+              )}</a></li>
+              <li><a href="#" data-page="resources" data-i18n="resources">${translate(
+                "resources"
+              )}</a></li>
+              <li><a href="#" data-page="community" data-i18n="community">${translate(
+                "community"
+              )}</a></li>
+              <li><a href="#" data-page="ai-assistant" data-i18n="aiAssistant">${translate(
+                "aiAssistant"
+              )}</a></li>
             </ul>
           </div>
           
           <div class="footer-section contact">
-            <h2>Contact Us</h2>
+            <h2 data-i18n="contactUs">${translate("contactUs")}</h2>
             <p><a href="tel:+919876543210" class="contact-link"><i class="fas fa-phone"></i> &nbsp; +91 9876543210</a></p>
             <p><a href="mailto:contact@lawsphere.org" class="contact-link"><i class="fas fa-envelope"></i> &nbsp; contact@lawsphere.org</a></p>
             <p><a href="https://maps.google.com/?q=123 Legal Street, Mumbai, India" target="_blank" class="contact-link location-link"><i class="fas fa-map-marker-alt"></i> &nbsp; 123 Legal Street, Mumbai, India</a></p>
           </div>
         </div>
         <div class="footer-bottom">
-          &copy; ${new Date().getFullYear()} LawSphere | All rights reserved
+          &copy; ${new Date().getFullYear()} LawSphere | <span data-i18n="allRightsReserved">${translate(
+    "allRightsReserved"
+  )}</span>
         </div>
       </div>
     </footer>

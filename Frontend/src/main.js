@@ -2,6 +2,12 @@ import "./style.css";
 import { renderHomePage } from "./pages/home.js";
 import { setupNavigation, navigateTo } from "./components/navigation.js";
 import { setupAuth } from "./services/auth.js";
+import {
+  getCurrentLanguage,
+  applyTranslations,
+  availableLanguages,
+  setLanguage,
+} from "./utils/translations.js";
 
 // Initialize the application
 function initApp() {
@@ -16,16 +22,29 @@ function initApp() {
         </div>
         <nav id="main-nav">
           <ul>
-            <li><a href="#" data-page="home" class="active">Home</a></li>
-            <li><a href="#" data-page="lawyers">Find Lawyers</a></li>
-            <li><a href="#" data-page="resources">Resources</a></li>
-            <li><a href="#" data-page="community">Community</a></li>
-            <li><a href="#" data-page="ai-assistant">AI Assistant</a></li>
+            <li><a href="#" data-page="home" data-i18n="home" class="active">Home</a></li>
+            <li><a href="#" data-page="lawyers" data-i18n="findLawyers">Find Lawyers</a></li>
+            <li><a href="#" data-page="resources" data-i18n="resources">Resources</a></li>
+            <li><a href="#" data-page="community" data-i18n="community">Community</a></li>
+            <li><a href="#" data-page="ai-assistant" data-i18n="aiAssistant">AI Assistant</a></li>
           </ul>
         </nav>
-        <div class="auth-buttons" id="auth-container">
-          <button id="login-btn" class="btn btn-outline">Login</button>
-          <button id="signup-btn" class="btn btn-primary">Sign Up</button>
+        <div class="right-nav-controls">
+          <div class="language-selector">
+            <button id="language-btn" class="language-btn">
+              <i class="fas fa-globe"></i>
+              <span class="current-language">${getCurrentLanguage().toUpperCase()}</span>
+            </button>
+            <div class="language-dropdown" id="language-dropdown">
+              <div class="language-dropdown-content">
+                <!-- Language options will be inserted here -->
+              </div>
+            </div>
+          </div>
+          <div class="auth-buttons" id="auth-container">
+            <button id="login-btn" class="btn btn-outline" data-i18n="login">Login</button>
+            <button id="signup-btn" class="btn btn-primary" data-i18n="signup">Sign Up</button>
+          </div>
         </div>
       </div>
     </header>
@@ -42,6 +61,9 @@ function initApp() {
   setupNavigation();
   setupAuth();
 
+  // Setup language selector
+  setupLanguageSelector();
+
   // Setup logo click to navigate to home
   document.getElementById("logo-home-link").addEventListener("click", (e) => {
     e.preventDefault();
@@ -57,10 +79,92 @@ function initApp() {
 
     // Set up social link event listeners
     setupSocialLinks();
+
+    // Apply translations after rendering
+    applyTranslations();
   });
 
   // Render the home page by default
   renderHomePage();
+}
+
+// Function to set up the language selector
+function setupLanguageSelector() {
+  const languageBtn = document.getElementById("language-btn");
+  const languageDropdown = document.getElementById("language-dropdown");
+  const dropdownContent = languageDropdown.querySelector(
+    ".language-dropdown-content"
+  );
+
+  // Populate dropdown with only English and Hindi
+  Object.entries(availableLanguages).forEach(([code, language]) => {
+    const langOption = document.createElement("div");
+    langOption.className = `language-option ${
+      code === getCurrentLanguage() ? "active" : ""
+    }`;
+    langOption.setAttribute("data-lang", code);
+    langOption.innerHTML = `
+      <span class="language-flag">${language.flag}</span>
+      <span class="language-name">${language.nativeName}</span>
+    `;
+    dropdownContent.appendChild(langOption);
+
+    // Add click event to select language
+    langOption.addEventListener("click", () => {
+      // If it's the same language, don't do anything
+      if (code === getCurrentLanguage()) {
+        languageDropdown.classList.remove("show");
+        return;
+      }
+
+      // Show simple loading indicator
+      const overlay = document.createElement("div");
+      overlay.className = "translation-loading-overlay";
+      overlay.innerHTML = `
+        <div class="translation-loading-spinner">
+          <i class="fas fa-spinner fa-spin"></i>
+          <span>Changing to ${language.name}...</span>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+
+      setLanguage(code);
+      document.querySelector(".current-language").textContent =
+        code.toUpperCase();
+
+      // Update active class
+      document.querySelectorAll(".language-option").forEach((option) => {
+        option.classList.toggle(
+          "active",
+          option.getAttribute("data-lang") === code
+        );
+      });
+
+      // Close dropdown
+      languageDropdown.classList.remove("show");
+
+      // Apply translations
+      applyTranslations();
+
+      // Remove the loading overlay after a short delay
+      setTimeout(() => {
+        document.body.removeChild(overlay);
+      }, 500);
+    });
+  });
+
+  // Toggle dropdown visibility
+  languageBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    languageDropdown.classList.toggle("show");
+  });
+
+  // Close dropdown when clicking outside
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest(".language-selector")) {
+      languageDropdown.classList.remove("show");
+    }
+  });
 }
 
 // Function to set up the social links
@@ -91,8 +195,10 @@ document.addEventListener("DOMContentLoaded", () => {
       window.open(externalLink.href, "_blank");
       return;
     }
-
-    // Rest of your click handling code
-    // ...
   });
+
+  // Apply translations with a small delay to ensure the page is rendered first
+  setTimeout(() => {
+    applyTranslations();
+  }, 300);
 });
