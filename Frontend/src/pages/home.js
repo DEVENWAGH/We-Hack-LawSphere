@@ -16,7 +16,6 @@ export function renderHomePage() {
         )}</button>
       </div>
     </section>
-    
     <section>
       <h2 class="section-title" data-i18n="ourServices">${translate(
         "ourServices"

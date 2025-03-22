@@ -12,7 +12,8 @@
     "axios": "^1.8.4",
     "language-detect": "^1.1.0",
     "lawsphere": "file:",
-    "marked": "^15.0.7"
+    "marked": "^15.0.7",
+    "zod": "^3.24.2"
   },
   "devDependencies": {
     "vite": "^6.2.0"

@@ -1,161 +1,229 @@
+import { resourceService } from "../services/api.js";
+
 export function renderResourcesPage() {
   const mainContent = document.getElementById("main-content");
 
+  // Show loading state
   mainContent.innerHTML = `
     <section class="resources-page">
-      <h1 class="page-title">Resource Library</h1>
-      <p class="page-description">Access guides, documents, and educational materials on various legal topics.</p>
+      <h1 class="page-title">Legal Resources</h1>
+      <p class="page-description">Access free legal guides, templates, and educational materials.</p>
       
-      <div class="resource-categories">
-        <button class="resource-category-btn active" data-category="all">All Resources</button>
-        <button class="resource-category-btn" data-category="housing">Housing & Tenants</button>
-        <button class="resource-category-btn" data-category="family">Family Law</button>
-        <button class="resource-category-btn" data-category="employment">Employment</button>
-        <button class="resource-category-btn" data-category="immigration">Immigration</button>
+      <div class="resources-filter card">
+        <div class="filter-section">
+          <span class="filter-label">Category:</span>
+          <div class="filter-options" id="category-filters">
+            <button class="filter-btn active" data-filter="all">All</button>
+            <!-- Categories will be loaded dynamically -->
+          </div>
+        </div>
+        
+        <div class="filter-section">
+          <span class="filter-label">Type:</span>
+          <div class="filter-options">
+            <button class="filter-btn active" data-filter="all">All</button>
+            <button class="filter-btn" data-filter="Guide">Guides</button>
+            <button class="filter-btn" data-filter="Template">Templates</button>
+            <button class="filter-btn" data-filter="Video">Videos</button>
+            <button class="filter-btn" data-filter="Article">Articles</button>
+          </div>
+        </div>
+        
+        <div class="search-container">
+          <input type="text" id="resource-search" placeholder="Search resources...">
+          <button class="btn btn-outline" id="search-btn"><i class="fas fa-search"></i></button>
+        </div>
       </div>
       
-      <div class="resources-grid">
-        <!-- Housing & Tenants Resources -->
-        <div class="resource-card" data-category="housing">
-          <div class="resource-icon"><i class="fas fa-home"></i></div>
-          <div class="resource-content">
-            <h3>Know Your Rights: Tenant Basics</h3>
-            <p>Learn about tenant rights, rental agreements, eviction processes, and how to address common housing issues.</p>
-            <div class="resource-actions">
-              <a href="/Tenants-Rights.pdf" target="_blank" class="btn btn-sm btn-outline">
-                <i class="fas fa-eye"></i> View PDF
-              </a>
-              <a href="/Tenants-Rights.pdf" download="Tenants-Rights.pdf" class="btn btn-sm btn-primary">
-                <i class="fas fa-download"></i> Download
-              </a>
-            </div>
-          </div>
-        </div>
-        
-        <div class="resource-card" data-category="housing">
-          <div class="resource-icon"><i class="fas fa-building"></i></div>
-          <div class="resource-content">
-            <h3>Eviction Process Guide</h3>
-            <p>Step-by-step explanation of the eviction process, your rights as a tenant, and how to respond to eviction notices.</p>
-            <button class="btn btn-sm btn-primary">Access Guide</button>
-          </div>
-        </div>
-        
-        <!-- Family Law Resources -->
-        <div class="resource-card" data-category="family">
-          <div class="resource-icon"><i class="fas fa-users"></i></div>
-          <div class="resource-content">
-            <h3>Child Support Calculator</h3>
-            <p>Interactive tool to help estimate child support payments based on your jurisdiction's guidelines.</p>
-            <button class="btn btn-sm btn-primary">Use Calculator</button>
-          </div>
-        </div>
-        
-        <div class="resource-card" data-category="family">
-          <div class="resource-icon"><i class="fas fa-balance-scale"></i></div>
-          <div class="resource-content">
-            <h3>Divorce Process Explained</h3>
-            <p>Comprehensive guide to divorce proceedings, division of assets, child custody, and support arrangements.</p>
-            <button class="btn btn-sm btn-primary">Read Guide</button>
-          </div>
-        </div>
-        
-        <!-- Employment Resources -->
-        <div class="resource-card" data-category="employment">
-          <div class="resource-icon"><i class="fas fa-briefcase"></i></div>
-          <div class="resource-content">
-            <h3>Workplace Discrimination</h3>
-            <p>Learn about different types of workplace discrimination and the steps to take if you're experiencing it.</p>
-            <button class="btn btn-sm btn-primary">Access Guide</button>
-          </div>
-        </div>
-        
-        <div class="resource-card" data-category="employment">
-          <div class="resource-icon"><i class="fas fa-file-signature"></i></div>
-          <div class="resource-content">
-            <h3>Employment Contract Review Guide</h3>
-            <p>What to look for before signing employment contracts and how to negotiate terms.</p>
-            <button class="btn btn-sm btn-primary">View Guide</button>
-          </div>
-        </div>
-        
-        <!-- Immigration Resources -->
-        <div class="resource-card" data-category="immigration">
-          <div class="resource-icon"><i class="fas fa-passport"></i></div>
-          <div class="resource-content">
-            <h3>Immigration Documentation Checklist</h3>
-            <p>Complete checklist of required documents for various immigration processes and applications.</p>
-            <button class="btn btn-sm btn-primary">Download Checklist</button>
-          </div>
-        </div>
-        
-        <div class="resource-card" data-category="immigration">
-          <div class="resource-icon"><i class="fas fa-landmark"></i></div>
-          <div class="resource-content">
-            <h3>Know Your Rights: Immigration Enforcement</h3>
-            <p>Information about your rights during interactions with immigration enforcement agencies.</p>
-            <button class="btn btn-sm btn-primary">Read More</button>
-          </div>
-        </div>
+      <div class="resources-container" id="resources-container">
+        <div class="loading-spinner">Loading resources...</div>
       </div>
     </section>
   `;
 
-  // Add event listeners for category filtering
-  document.querySelectorAll(".resource-category-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      // Remove active class from all buttons
-      document
-        .querySelectorAll(".resource-category-btn")
-        .forEach((b) => b.classList.remove("active"));
+  // Load resources
+  loadResources();
 
-      // Add active class to clicked button
-      btn.classList.add("active");
+  // Load categories
+  loadCategories();
 
-      // Get selected category
-      const category = btn.dataset.category;
-
-      // Filter resources
-      document.querySelectorAll(".resource-card").forEach((card) => {
-        if (category === "all" || card.dataset.category === category) {
-          card.style.display = "flex";
-        } else {
-          card.style.display = "none";
-        }
-      });
-    });
+  // Set up search functionality
+  document.getElementById("search-btn").addEventListener("click", () => {
+    const searchTerm = document.getElementById("resource-search").value.trim();
+    if (searchTerm) {
+      filterResources({ search: searchTerm });
+    }
   });
 
-  // Add CSS for the resource actions
-  const style = document.createElement("style");
-  style.textContent = `
-    .resource-actions {
-      display: flex;
-      gap: 10px;
-      margin-top: 10px;
-    }
-    .resource-actions .btn {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-  `;
-  document.head.appendChild(style);
-
-  // Check if PDF file exists and show error if it doesn't
-  fetch("/Tenants-Rights.pdf")
-    .then((response) => {
-      if (!response.ok) {
-        const tenantCard = document.querySelector(
-          '.resource-card[data-category="housing"]'
-        );
-        const actionButtons = tenantCard.querySelector(".resource-actions");
-        actionButtons.innerHTML = `
-          <p class="error-message"><i class="fas fa-exclamation-circle"></i> PDF file not found</p>
-        `;
+  // Enter key in search box
+  document
+    .getElementById("resource-search")
+    .addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        document.getElementById("search-btn").click();
       }
-    })
-    .catch((error) => {
-      console.error("Error checking PDF file:", error);
     });
+}
+
+async function loadResources(filters = {}) {
+  const resourcesContainer = document.getElementById("resources-container");
+
+  try {
+    // Get resources from API
+    const response = await resourceService.getResources(filters);
+    const resources = response.data.data;
+
+    if (resources.length === 0) {
+      resourcesContainer.innerHTML = `<p class="no-results">No resources found matching your criteria.</p>`;
+      return;
+    }
+
+    // Render resources
+    resourcesContainer.innerHTML = `
+      <div class="resources-grid">
+        ${resources.map((resource) => renderResourceCard(resource)).join("")}
+      </div>
+    `;
+
+    // Add event listeners for action buttons
+    document.querySelectorAll(".resource-view-btn").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        const resourceId = btn.dataset.id;
+        viewResource(resourceId);
+      });
+    });
+
+    document.querySelectorAll(".resource-download-btn").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        const resourceId = btn.dataset.id;
+        downloadResource(resourceId);
+
+        // Increment download count
+        resourceService.incrementDownload(resourceId).catch((error) => {
+          console.error("Error incrementing download count:", error);
+        });
+      });
+    });
+  } catch (error) {
+    console.error("Error loading resources:", error);
+    resourcesContainer.innerHTML = `<p class="error-message">Failed to load resources. Please try again later.</p>`;
+  }
+}
+
+async function loadCategories() {
+  try {
+    // Get categories from API
+    const response = await resourceService.getResourceCategories();
+    const categories = response.data.data;
+
+    const categoryFilters = document.getElementById("category-filters");
+
+    // Add category filter buttons
+    categories.forEach((category) => {
+      const button = document.createElement("button");
+      button.className = "filter-btn";
+      button.setAttribute("data-filter", category);
+      button.textContent = category;
+
+      button.addEventListener("click", () => {
+        // Remove active class from all category buttons
+        document
+          .querySelectorAll("#category-filters .filter-btn")
+          .forEach((btn) => btn.classList.remove("active"));
+
+        // Add active class to clicked button
+        button.classList.add("active");
+
+        // Filter resources by category
+        filterResources({ category });
+      });
+
+      categoryFilters.appendChild(button);
+    });
+
+    // Add event listener to "All" button
+    const allButton = document.querySelector(
+      "#category-filters .filter-btn[data-filter='all']"
+    );
+    allButton.addEventListener("click", () => {
+      // Remove active class from all category buttons
+      document
+        .querySelectorAll("#category-filters .filter-btn")
+        .forEach((btn) => btn.classList.remove("active"));
+
+      // Add active class to "All" button
+      allButton.classList.add("active");
+
+      // Load all resources
+      loadResources();
+    });
+  } catch (error) {
+    console.error("Error loading categories:", error);
+  }
+}
+
+function filterResources(filters) {
+  loadResources(filters);
+}
+
+function renderResourceCard(resource) {
+  const hasFile = resource.file ? true : false;
+
+  return `
+    <div class="resource-card">
+      <div class="resource-type ${resource.type.toLowerCase()}">${
+    resource.type
+  }</div>
+      <h3 class="resource-title">${resource.title}</h3>
+      <p class="resource-category">${resource.category}</p>
+      <p class="resource-description">${resource.description}</p>
+      <div class="resource-meta">
+        <span><i class="fas fa-eye"></i> ${resource.views}</span>
+        ${
+          resource.downloads
+            ? `<span><i class="fas fa-download"></i> ${resource.downloads}</span>`
+            : ""
+        }
+        ${
+          resource.duration
+            ? `<span><i class="fas fa-clock"></i> ${resource.duration}</span>`
+            : ""
+        }
+      </div>
+      <div class="resource-actions">
+        ${
+          hasFile
+            ? `
+          <button class="btn btn-primary resource-view-btn" data-id="${resource.id}">
+            <i class="fas fa-eye"></i> View
+          </button>
+          <button class="btn btn-outline resource-download-btn" data-id="${resource.id}">
+            <i class="fas fa-download"></i> Download
+          </button>
+        `
+            : `
+          <button class="btn btn-primary" disabled>Coming Soon</button>
+        `
+        }
+      </div>
+    </div>
+  `;
+}
+
+function viewResource(resourceId) {
+  // Open the resource in a new tab for viewing
+  window.open(
+    `${resourceService.getApiUrl()}/resources/${resourceId}/file`,
+    "_blank"
+  );
+}
+
+function downloadResource(resourceId) {
+  // Trigger file download
+  window.open(
+    `${resourceService.getApiUrl()}/resources/${resourceId}/file?download=true`,
+    "_blank"
+  );
 }

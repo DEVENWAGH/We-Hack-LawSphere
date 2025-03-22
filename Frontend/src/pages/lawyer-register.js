@@ -43,6 +43,10 @@ export function renderLawyerRegisterPage() {
     return;
   }
 
+  // Parse user data to check for existing profile image
+  const userData = JSON.parse(user);
+  const profileImageSrc = userData.profileImage || "/lawyer.png";
+
   mainContent.innerHTML = `
     <section class="lawyer-register-page">
       <h1 class="page-title">Register as a Lawyer</h1>
@@ -55,7 +59,7 @@ export function renderLawyerRegisterPage() {
             <h3>Profile Image</h3>
             <div class="profile-upload-container">
               <div class="profile-image-preview">
-                <img id="profile-preview" src="/default-profile.png" alt="Profile preview">
+                <img id="profile-preview" src="${profileImageSrc}" alt="Profile preview">
               </div>
               <div class="upload-controls">
                 <input type="file" id="profile-image" name="profileImage" accept="image/*" style="display: none;">

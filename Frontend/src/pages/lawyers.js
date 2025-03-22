@@ -14,6 +14,20 @@ export function renderLawyersPage() {
       <h1 class="page-title">Find a Lawyer</h1>
       <p class="page-description">Connect with pro bono lawyers or affordable legal services in your area.</p>
       
+      ${
+        !user || user.role !== "lawyer"
+          ? `
+      <div class="lawyer-cta-banner">
+        <div class="cta-content">
+          <h3>Are you a lawyer?</h3>
+          <p>Join our platform to offer your services and connect with clients who need legal assistance.</p>
+        </div>
+        <button class="btn btn-primary" id="become-lawyer-btn">Register as a Lawyer</button>
+      </div>
+      `
+          : ""
+      }
+      
       <div class="search-container card">
         <form id="lawyer-search-form">
           <div class="search-inputs">
@@ -54,7 +68,12 @@ export function renderLawyersPage() {
             </div>
           </div>
           
-          <button type="submit" class="btn btn-primary">Search</button>
+          <div class="search-actions">
+            <button type="submit" class="btn btn-primary">Search</button>
+            <button type="button" class="btn btn-highlight" id="lawyer-register-btn">
+              <i class="fas fa-user-plus"></i> Register as a Lawyer
+            </button>
+          </div>
         </form>
       </div>
       
@@ -73,6 +92,53 @@ export function renderLawyersPage() {
     .addEventListener("click", (e) => {
       e.preventDefault();
       requestUserLocation();
+    });
+
+  // Add event listener for the "Register as a Lawyer" button if it exists
+  const becomeLawyerBtn = document.getElementById("become-lawyer-btn");
+  if (becomeLawyerBtn) {
+    becomeLawyerBtn.addEventListener("click", () => {
+      const user = localStorage.getItem("user");
+      if (user) {
+        // User is already logged in, redirect to lawyer registration
+        import("../components/navigation.js").then((module) => {
+          module.navigateTo("lawyer-register");
+        });
+      } else {
+        // User needs to log in first, show signup modal with lawyer option selected
+        document.getElementById("signup-btn").click();
+        // Set a small timeout to ensure modal is loaded before selecting the lawyer option
+        setTimeout(() => {
+          const lawyerOption = document.querySelector(
+            '.signup-type-btn[data-type="lawyer"]'
+          );
+          if (lawyerOption) lawyerOption.click();
+        }, 300);
+      }
+    });
+  }
+
+  // Add event listener for the new Register as Lawyer button
+  document
+    .getElementById("lawyer-register-btn")
+    .addEventListener("click", () => {
+      const user = localStorage.getItem("user");
+      if (user) {
+        // User is already logged in, redirect to lawyer registration
+        import("../components/navigation.js").then((module) => {
+          module.navigateTo("lawyer-register");
+        });
+      } else {
+        // User needs to log in first, show signup modal with lawyer option selected
+        document.getElementById("signup-btn").click();
+        // Set a small timeout to ensure modal is loaded before selecting the lawyer option
+        setTimeout(() => {
+          const lawyerOption = document.querySelector(
+            '.signup-type-btn[data-type="lawyer"]'
+          );
+          if (lawyerOption) lawyerOption.click();
+        }, 300);
+      }
     });
 
   // Load lawyers from API

@@ -8,7 +8,7 @@ import { uploadProfile } from "../utils/imagekit.js";
  */
 export const registerUser = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, mobile, password, role } = req.body;
 
     // Check if user already exists
     const userExists = await UserModel.findOne({ email });
@@ -19,11 +19,17 @@ export const registerUser = async (req, res) => {
       });
     }
 
-    // Create the user
+    // Validate role if provided
+    const validRoles = ["user", "lawyer"];
+    const userRole = role && validRoles.includes(role) ? role : "user";
+
+    // Create the user with specified role
     const user = await UserModel.create({
       name,
       email,
+      mobile,
       password,
+      role: userRole, // Use the provided role or default to "user"
     });
 
     if (user) {
@@ -37,6 +43,7 @@ export const registerUser = async (req, res) => {
           id: user._id,
           name: user.name,
           email: user.email,
+          mobile: user.mobile,
           role: user.role,
         },
       });
@@ -95,6 +102,7 @@ export const loginUser = async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
+        mobile: user.mobile,
         role: user.role,
         profileImage: user.profileImage,
       },
@@ -126,6 +134,7 @@ export const getUserProfile = async (req, res) => {
       },
     });
   } catch (error) {
+    console.error("Get profile error:", error);
     res.status(500).json({
       success: false,
       message: "Server error",
@@ -141,7 +150,7 @@ export const getUserProfile = async (req, res) => {
  */
 export const updateUserProfile = async (req, res) => {
   try {
-    const { name, location, bio } = req.body;
+    const { name, mobile, location, bio } = req.body;
 
     // Get user ID from the authenticated request
     const userId = req.user.id;
@@ -151,6 +160,7 @@ export const updateUserProfile = async (req, res) => {
       userId,
       {
         name,
+        mobile,
         location,
         bio,
       },
@@ -172,6 +182,7 @@ export const updateUserProfile = async (req, res) => {
           id: updatedUser._id,
           name: updatedUser.name,
           email: updatedUser.email,
+          mobile: updatedUser.mobile,
           role: updatedUser.role,
           location: updatedUser.location,
           bio: updatedUser.bio,
@@ -235,6 +246,7 @@ export const uploadUserProfileImage = async (req, res) => {
           id: updatedUser._id,
           name: updatedUser.name,
           email: updatedUser.email,
+          mobile: updatedUser.mobile,
           role: updatedUser.role,
           profileImage: cacheBustUrl,
         },

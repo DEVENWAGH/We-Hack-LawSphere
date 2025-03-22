@@ -1,5 +1,7 @@
 import { userService } from "./api.js";
+
 import { translate } from "../utils/translations.js";
+import { loginSchema, signupSchema } from "../utils/formValidation.js";
 
 export function setupAuth() {
   const loginButton = document.getElementById("login-btn");
@@ -129,6 +131,17 @@ export function setupAuth() {
 
         try {
           errorElement.style.display = "none";
+
+          // Validate form data using Zod
+          const validationResult = loginSchema.safeParse({ email, password });
+
+          if (!validationResult.success) {
+            const errorMessage = validationResult.error.issues[0].message;
+            errorElement.textContent = errorMessage;
+            errorElement.style.display = "block";
+            return;
+          }
+
           const response = await userService.login(email, password);
 
           // Check if the user type matches the selected type
@@ -149,6 +162,7 @@ export function setupAuth() {
               token: response.data.token,
               name: response.data.user.name,
               email: response.data.user.email,
+              mobile: response.data.user.mobile,
               id: response.data.user.id,
               role: response.data.user.role,
               profileImage: response.data.user.profileImage,
@@ -160,6 +174,12 @@ export function setupAuth() {
             name: response.data.user.name,
             profileImage: response.data.user.profileImage,
           });
+
+          // Replace this line:
+          // window.location.href = "/";
+
+          // With this:
+          window.location.reload();
         } catch (error) {
           console.error("Login error:", error);
           errorElement.textContent =
@@ -190,6 +210,10 @@ export function setupAuth() {
           <div class="form-group">
             <label for="email">Email</label>
             <input type="email" id="email" required>
+          </div>
+          <div class="form-group">
+            <label for="mobile">Mobile</label>
+            <input type="text" id="mobile" required placeholder="+91 XXXXX XXXXX">
           </div>
           <div class="form-group">
             <label for="password">Password</label>
@@ -239,21 +263,40 @@ export function setupAuth() {
 
         const name = document.getElementById("name").value;
         const email = document.getElementById("email").value;
+        const mobile = document.getElementById("mobile").value;
         const password = document.getElementById("password").value;
         const confirmPassword =
           document.getElementById("confirm-password").value;
         const errorElement = document.getElementById("signup-error");
 
-        // Validate passwords match
-        if (password !== confirmPassword) {
-          errorElement.textContent = "Passwords do not match";
-          errorElement.style.display = "block";
-          return;
-        }
-
         try {
           errorElement.style.display = "none";
-          const userData = { name, email, password };
+
+          // Validate form data using Zod
+          const validationResult = signupSchema.safeParse({
+            name,
+            email,
+            mobile,
+            password,
+            confirmPassword,
+          });
+
+          if (!validationResult.success) {
+            const errorMessage = validationResult.error.issues[0].message;
+            errorElement.textContent = errorMessage;
+            errorElement.style.display = "block";
+            return;
+          }
+
+          // Include the role (user or lawyer) in registration data
+          const userData = {
+            name,
+            email,
+            mobile,
+            password,
+            role: selectedType, // Include the selected role type here
+          };
+
           const response = await userService.register(userData);
 
           // Store the token and user data
@@ -263,6 +306,7 @@ export function setupAuth() {
               token: response.data.token,
               name: response.data.user.name,
               email: response.data.user.email,
+              mobile: response.data.user.mobile,
               id: response.data.user.id,
               role: response.data.user.role,
             })
@@ -272,9 +316,14 @@ export function setupAuth() {
 
           // If user selected to register as lawyer, redirect to lawyer registration page
           if (selectedType === "lawyer") {
-            document.querySelector('a[data-page="lawyer-register"]').click();
+            // Use the more reliable navigation function instead of trying to click an element
+            import("../components/navigation.js").then((module) => {
+              module.navigateTo("lawyer-register");
+            });
           } else {
             showLoggedInState({ name: response.data.user.name });
+            // Redirect to home page for regular users
+            window.location.href = "/";
           }
         } catch (error) {
           console.error("Registration error:", error);

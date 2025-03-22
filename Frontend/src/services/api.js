@@ -201,6 +201,7 @@ export const resourceService = {
   getResourceById: (id) => api.get(`/resources/${id}`),
   getResourceCategories: () => api.get("/resources/categories"),
   incrementDownload: (id) => api.put(`/resources/${id}/download`),
+  getApiUrl: () => API_URL,
 };
 
 // Community API services

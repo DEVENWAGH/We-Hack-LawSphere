@@ -43,69 +43,71 @@ export async function renderUserProfilePage() {
     // Render profile page
     mainContent.innerHTML = `
       <section class="user-profile-page">
-        <div class="profile-header">
-          <div class="profile-image">
-            <img src="${
-              userProfile.profileImage ||
-              currentUser.profileImage ||
-              "/lawyer.png"
-            }" alt="${
-      userProfile.name || currentUser.name
-    }" onerror="this.src='/lawyer.png'">
-            <button id="change-photo-btn" class="btn btn-sm btn-outline"><i class="fas fa-camera"></i> Change Photo</button>
-          </div>
-          <div class="profile-info">
-            <h1>${userProfile.name || currentUser.name}</h1>
-            <p><strong>Email:</strong> ${
-              userProfile.email || currentUser.email
-            }</p>
-            <p><strong>Role:</strong> ${
-              userProfile.role || currentUser.role
-            }</p>
-            <p><strong>Location:</strong> ${
-              userProfile.location || currentUser.location || "Not specified"
-            }</p>
-            <p><strong>Bio:</strong> ${
-              userProfile.bio ||
-              currentUser.bio ||
-              "No bio information available."
-            }</p>
-          </div>
-          <div class="profile-actions">
-            <button id="edit-profile-btn" class="btn btn-primary"><i class="fas fa-edit"></i> Edit Profile</button>
-          </div>
-        </div>
-        
-        <div class="profile-tabs">
-          <button class="tab-btn active" data-tab="activities">Activities</button>
-          <button class="tab-btn" data-tab="consultations">Consultations</button>
-          <button class="tab-btn" data-tab="saved">Saved Resources</button>
-        </div>
-        
-        <div class="profile-content">
-          <div class="tab-content active" id="activities-tab">
-            <h2>Recent Activities</h2>
-            <p>Your recent forum posts, comments, and interactions will appear here.</p>
+        <div class="profile-container">
+          <div class="profile-header">
+            <div class="profile-image">
+              <img src="${
+                userProfile?.profileImage ||
+                currentUser?.profileImage ||
+                "/lawyer.png"
+              }" alt="${userProfile?.name || currentUser?.name}">
+              <button id="change-photo-btn" class="btn btn-sm btn-outline"><i class="fas fa-camera"></i> Change Photo</button>
+            </div>
+            <div class="profile-info">
+              <h1>${userProfile?.name || currentUser?.name}</h1>
+              <p><strong>Email:</strong> ${
+                userProfile?.email || currentUser?.email
+              }</p>
+              <p><strong>Mobile:</strong> ${
+                userProfile?.mobile || currentUser?.mobile || "Not specified"
+              }</p>
+              <p><strong>Location:</strong> ${
+                userProfile?.location ||
+                currentUser?.location ||
+                "Not specified"
+              }</p>
+              <p><strong>Bio:</strong> ${
+                userProfile?.bio ||
+                currentUser?.bio ||
+                "No bio information available."
+              }</p>
+            </div>
+            <div class="profile-actions">
+              <button id="edit-profile-btn" class="btn btn-primary"><i class="fas fa-edit"></i> Edit Profile</button>
+            </div>
           </div>
           
-          <div class="tab-content" id="consultations-tab">
-            <h2>Your Consultations</h2>
-            <div class="consultation-filters">
-              <button class="consultation-filter-btn active" data-filter="all">All</button>
-              <button class="consultation-filter-btn" data-filter="pending">Pending</button>
-              <button class="consultation-filter-btn" data-filter="accepted">Accepted</button>
-              <button class="consultation-filter-btn" data-filter="completed">Completed</button>
+          <div class="profile-tabs">
+            <button class="tab-btn active" data-tab="activities">Activities</button>
+            <button class="tab-btn" data-tab="consultations">Consultations</button>
+            <button class="tab-btn" data-tab="saved">Saved Resources</button>
+          </div>
+          
+          <div class="profile-content">
+            <div class="tab-content active" id="activities-tab">
+              <h2>Recent Activities</h2>
+              <p>Your recent forum posts, comments, and interactions will appear here.</p>
             </div>
             
-            <div class="consultations-container" id="consultations-container">
-              <div class="loading-spinner">Loading consultations...</div>
+            <div class="tab-content" id="consultations-tab">
+              <h2>Your Consultations</h2>
+              <div class="consultation-filters">
+                <button class="consultation-filter-btn active" data-filter="all">All</button>
+                <button class="consultation-filter-btn" data-filter="pending">Pending</button>
+                <button class="consultation-filter-btn" data-filter="accepted">Accepted</button>
+                <button class="consultation-filter-btn" data-filter="completed">Completed</button>
+              </div>
+              
+              <div class="consultations-container" id="consultations-container">
+                <div class="loading-spinner">Loading consultations...</div>
+              </div>
             </div>
-          </div>
-          
-          <div class="tab-content" id="saved-tab">
-            <h2>Saved Resources</h2>
-            <div id="saved-resources-container">
-              <p>You haven't saved any resources yet.</p>
+            
+            <div class="tab-content" id="saved-tab">
+              <h2>Saved Resources</h2>
+              <div id="saved-resources-container">
+                <p>You haven't saved any resources yet.</p>
+              </div>
             </div>
           </div>
         </div>
@@ -304,6 +306,15 @@ function showEditProfileModal(user) {
               }" required>
             </div>
             <div class="form-group">
+              <label for="mobile">Mobile Number</label>
+              <input type="tel" id="mobile" name="mobile" value="${
+                (profileData && profileData.mobile) ||
+                (user && user.mobile) ||
+                (currentUser && currentUser.mobile) ||
+                ""
+              }" placeholder="+91 XXXXX XXXXX">
+            </div>
+            <div class="form-group">
               <label for="location">Location</label>
               <input type="text" id="location" name="location" value="${
                 (profileData && profileData.location) ||
@@ -349,7 +360,7 @@ function showEditProfileModal(user) {
         }
       });
 
-      // Handle form submit - implement this part properly
+      // Handle form submit
       document
         .getElementById("edit-profile-form")
         .addEventListener("submit", async (e) => {
@@ -360,6 +371,7 @@ function showEditProfileModal(user) {
 
           // Get form data
           const name = document.getElementById("name").value.trim();
+          const mobile = document.getElementById("mobile").value.trim();
           const location = document.getElementById("location").value.trim();
           const bio = document.getElementById("bio").value.trim();
 
@@ -377,7 +389,7 @@ function showEditProfileModal(user) {
 
           try {
             // Send update to API
-            const userData = { name, location, bio };
+            const userData = { name, mobile, location, bio };
             const response = await userService.updateUserProfile(userData);
 
             if (response.data.success) {
@@ -386,6 +398,7 @@ function showEditProfileModal(user) {
               if (currentUserData) {
                 // Update all user data in localStorage
                 currentUserData.name = name;
+                currentUserData.mobile = mobile;
                 currentUserData.location = location;
                 currentUserData.bio = bio;
                 localStorage.setItem("user", JSON.stringify(currentUserData));
@@ -438,6 +451,14 @@ function showEditProfileModal(user) {
               }" required>
             </div>
             <div class="form-group">
+              <label for="mobile">Mobile Number</label>
+              <input type="tel" id="mobile" name="mobile" value="${
+                (user && user.mobile) ||
+                (currentUser && currentUser.mobile) ||
+                ""
+              }" placeholder="+91 XXXXX XXXXX">
+            </div>
+            <div class="form-group">
               <label for="location">Location</label>
               <input type="text" id="location" name="location" value="${
                 (user && user.location) ||
@@ -460,7 +481,6 @@ function showEditProfileModal(user) {
         </div>
       `;
 
-      // Add the same event handlers including the submit handler
       document.body.appendChild(modal);
 
       // Handle cancel button
@@ -480,17 +500,18 @@ function showEditProfileModal(user) {
         }
       });
 
-      // Add the same form submission handler here too
+      // Handle form submit
       document
         .getElementById("edit-profile-form")
         .addEventListener("submit", async (e) => {
-          e.preventDefault();
+          e.preventDefault(); // Prevent default form submission
 
           const errorElement = document.getElementById("edit-form-error");
           errorElement.style.display = "none";
 
           // Get form data
           const name = document.getElementById("name").value.trim();
+          const mobile = document.getElementById("mobile").value.trim();
           const location = document.getElementById("location").value.trim();
           const bio = document.getElementById("bio").value.trim();
 
@@ -508,7 +529,7 @@ function showEditProfileModal(user) {
 
           try {
             // Send update to API
-            const userData = { name, location, bio };
+            const userData = { name, mobile, location, bio };
             const response = await userService.updateUserProfile(userData);
 
             if (response.data.success) {
@@ -517,6 +538,7 @@ function showEditProfileModal(user) {
               if (currentUserData) {
                 // Update all user data in localStorage
                 currentUserData.name = name;
+                currentUserData.mobile = mobile;
                 currentUserData.location = location;
                 currentUserData.bio = bio;
                 localStorage.setItem("user", JSON.stringify(currentUserData));
@@ -635,24 +657,14 @@ function showChangePhotoModal(user) {
       saveBtn.disabled = true;
       saveBtn.textContent = "Uploading...";
       errorElement.style.display = "none";
-
-      // Create form data for file upload
+      // Upload the image directly without timeout or Promise.race
+      // This simplifies the code and makes debugging easier
       const formData = new FormData();
       formData.append("profileImage", profileImageInput.files[0]);
 
-      console.log(
-        "Uploading image:",
-        profileImageInput.files[0].name,
-        profileImageInput.files[0].size,
-        profileImageInput.files[0].type
-      );
-
-      // Upload the image directly without timeout or Promise.race
-      // This simplifies the code and makes debugging easier
       const response = await userService.uploadProfileImage(formData);
 
       console.log("Upload response:", response);
-
       if (response.data && response.data.success) {
         // Update the user object in localStorage with new image URL
         const userData = JSON.parse(localStorage.getItem("user"));
@@ -662,8 +674,6 @@ function showChangePhotoModal(user) {
             response.data.url ||
             response.data.data?.profileImage ||
             response.data.data?.user?.profileImage;
-
-          // Store the updated user data
           localStorage.setItem("user", JSON.stringify(userData));
         }
 
@@ -688,7 +698,6 @@ function showChangePhotoModal(user) {
         const profileIcon = document.querySelector("#profile-icon img");
         if (profileIcon) {
           profileIcon.src = userData.profileImage;
-
           // Force image reload
           const timestamp = new Date().getTime();
           profileIcon.src = `${userData.profileImage}?t=${timestamp}`;

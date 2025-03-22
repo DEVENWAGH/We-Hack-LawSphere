@@ -4,6 +4,7 @@ import {
   getResourceById,
   getResourceCategories,
   incrementDownload,
+  getResourceFile,
 } from "../controllers/resourceController.js";
 
 const router = express.Router();
@@ -13,5 +14,6 @@ router.get("/", getResources);
 router.get("/categories", getResourceCategories);
 router.get("/:id", getResourceById);
 router.put("/:id/download", incrementDownload);
+router.get("/:id/file", getResourceFile);
 
 export default router;
