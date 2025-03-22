@@ -14,20 +14,6 @@ export function renderLawyersPage() {
       <h1 class="page-title">Find a Lawyer</h1>
       <p class="page-description">Connect with pro bono lawyers or affordable legal services in your area.</p>
       
-      ${
-        !user || user.role !== "lawyer"
-          ? `
-      <div class="lawyer-cta-banner">
-        <div class="cta-content">
-          <h3>Are you a lawyer?</h3>
-          <p>Join our platform to offer your services and connect with clients who need legal assistance.</p>
-        </div>
-        <button class="btn btn-primary" id="become-lawyer-btn">Register as a Lawyer</button>
-      </div>
-      `
-          : ""
-      }
-      
       <div class="search-container card">
         <form id="lawyer-search-form">
           <div class="search-inputs">

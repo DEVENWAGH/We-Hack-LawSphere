@@ -47,9 +47,7 @@ export async function renderUserProfilePage() {
           <div class="profile-header">
             <div class="profile-image">
               <img src="${
-                userProfile?.profileImage ||
-                currentUser?.profileImage ||
-                "/lawyer.png"
+                userProfile?.profileImage || "/lawyer.png"
               }" alt="${userProfile?.name || currentUser?.name}">
               <button id="change-photo-btn" class="btn btn-sm btn-outline"><i class="fas fa-camera"></i> Change Photo</button>
             </div>
