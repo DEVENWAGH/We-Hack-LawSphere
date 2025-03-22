@@ -1,8 +1,8 @@
 import fetch from "node-fetch";
 
-// Base URL for Gemini API
+// Update the Base URL for Gemini API with the correct model name
 const GEMINI_API_URL =
-  "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent";
+  "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
 
 /**
  * Get response from Gemini AI for legal queries
@@ -17,7 +17,7 @@ export const getLegalAssistance = async (query) => {
       throw new Error("GEMINI_API_KEY is not defined in environment variables");
     }
 
-    // Prepare the payload for Gemini API
+    // Prepare the payload for Gemini API - structure remains the same for gemini-2.0-flash
     const payload = {
       contents: [
         {
@@ -45,7 +45,7 @@ export const getLegalAssistance = async (query) => {
       },
     };
 
-    // Make request to Gemini API
+    // Make request to Gemini API with the apiKey as a query parameter
     const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
       method: "POST",
       headers: {

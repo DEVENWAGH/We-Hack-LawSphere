@@ -163,7 +163,15 @@ function addMessageToChat(sender, content) {
       </div>
     `;
   } else {
-    messageContent.innerHTML = `<p>${content}</p>`;
+    // Format content: convert **text** to <strong>text</strong> for bold formatting
+    const formattedContent = content.replace(
+      /\*\*(.*?)\*\*/g,
+      "<strong>$1</strong>"
+    );
+
+    // For bullet points and paragraphs, we'll keep the simple approach
+    // but wrap content in paragraphs
+    messageContent.innerHTML = `<p>${formattedContent}</p>`;
   }
 
   messageDiv.appendChild(messageContent);

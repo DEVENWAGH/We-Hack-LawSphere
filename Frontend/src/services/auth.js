@@ -1,3 +1,5 @@
+import { userService } from "./api.js";
+
 export function setupAuth() {
   const loginButton = document.getElementById("login-btn");
   const signupButton = document.getElementById("signup-btn");
@@ -47,6 +49,7 @@ export function setupAuth() {
             <label for="password">Password</label>
             <input type="password" id="password" required>
           </div>
+          <p class="error-message" id="login-error" style="color: red; display: none;"></p>
           <button type="submit" class="btn btn-primary">Login</button>
         </form>
       </div>
@@ -67,19 +70,41 @@ export function setupAuth() {
     });
 
     // Handle form submit
-    document.getElementById("login-form").addEventListener("submit", (e) => {
-      e.preventDefault();
+    document
+      .getElementById("login-form")
+      .addEventListener("submit", async (e) => {
+        e.preventDefault();
 
-      // For demo purposes, just simulate login
-      const user = {
-        name: "Demo User",
-        email: document.getElementById("email").value,
-      };
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
+        const errorElement = document.getElementById("login-error");
 
-      localStorage.setItem("user", JSON.stringify(user));
-      document.body.removeChild(modal);
-      showLoggedInState(user);
-    });
+        try {
+          errorElement.style.display = "none";
+          const response = await userService.login(email, password);
+
+          // Store the token and user data
+          localStorage.setItem(
+            "user",
+            JSON.stringify({
+              token: response.data.token,
+              name: response.data.user.name,
+              email: response.data.user.email,
+              id: response.data.user.id,
+              role: response.data.user.role,
+              profileImage: response.data.user.profileImage,
+            })
+          );
+
+          document.body.removeChild(modal);
+          showLoggedInState({ name: response.data.user.name });
+        } catch (error) {
+          console.error("Login error:", error);
+          errorElement.textContent =
+            error.response?.data?.message || "Login failed. Please try again.";
+          errorElement.style.display = "block";
+        }
+      });
   }
 
   function showSignupModal() {
@@ -100,12 +125,13 @@ export function setupAuth() {
           </div>
           <div class="form-group">
             <label for="password">Password</label>
-            <input type="password" id="password" required>
+            <input type="password" id="password" required minlength="6">
           </div>
           <div class="form-group">
             <label for="confirm-password">Confirm Password</label>
             <input type="password" id="confirm-password" required>
           </div>
+          <p class="error-message" id="signup-error" style="color: red; display: none;"></p>
           <button type="submit" class="btn btn-primary">Sign Up</button>
         </form>
       </div>
@@ -126,27 +152,51 @@ export function setupAuth() {
     });
 
     // Handle form submit
-    document.getElementById("signup-form").addEventListener("submit", (e) => {
-      e.preventDefault();
+    document
+      .getElementById("signup-form")
+      .addEventListener("submit", async (e) => {
+        e.preventDefault();
 
-      // Validate passwords match
-      const password = document.getElementById("password").value;
-      const confirmPassword = document.getElementById("confirm-password").value;
+        const name = document.getElementById("name").value;
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
+        const confirmPassword =
+          document.getElementById("confirm-password").value;
+        const errorElement = document.getElementById("signup-error");
 
-      if (password !== confirmPassword) {
-        alert("Passwords do not match");
-        return;
-      }
+        // Validate passwords match
+        if (password !== confirmPassword) {
+          errorElement.textContent = "Passwords do not match";
+          errorElement.style.display = "block";
+          return;
+        }
 
-      // For demo purposes, just simulate signup
-      const user = {
-        name: document.getElementById("name").value,
-        email: document.getElementById("email").value,
-      };
+        try {
+          errorElement.style.display = "none";
+          const userData = { name, email, password };
+          const response = await userService.register(userData);
 
-      localStorage.setItem("user", JSON.stringify(user));
-      document.body.removeChild(modal);
-      showLoggedInState(user);
-    });
+          // Store the token and user data
+          localStorage.setItem(
+            "user",
+            JSON.stringify({
+              token: response.data.token,
+              name: response.data.user.name,
+              email: response.data.user.email,
+              id: response.data.user.id,
+              role: response.data.user.role,
+            })
+          );
+
+          document.body.removeChild(modal);
+          showLoggedInState({ name: response.data.user.name });
+        } catch (error) {
+          console.error("Registration error:", error);
+          errorElement.textContent =
+            error.response?.data?.message ||
+            "Registration failed. Please try again.";
+          errorElement.style.display = "block";
+        }
+      });
   }
 }
