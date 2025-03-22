@@ -5,10 +5,6 @@ import path from "path";
 import { fileURLToPath } from "url";
 import connectDB from "./config/db.js";
 import { initAuth } from "./config/auth.js";
-import fs from "fs";
-// Add Socket.io imports
-import http from "http";
-import { Server } from "socket.io";
 
 // Import routes
 import userRoutes from "./routes/userRoutes.js";
@@ -21,15 +17,10 @@ import consultationRoutes from "./routes/consultationRoutes.js";
 // Load environment variables
 dotenv.config();
 
-// Connect to MongoDB
-connectDB();
-
 // Initialize Express app
 const app = express();
-// Create HTTP server for Socket.io
-const server = http.createServer(app);
 
-// Get dirname equivalent in ES modules
+// Get dirname equivalent in ES modules (for local dev only)
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Middleware
@@ -37,64 +28,39 @@ app.use(express.json({ limit: "50mb" })); // Increased limit for base64 images
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 app.use(
   cors({
-    origin:
-      process.env.NODE_ENV === "production"
-        ? "https://we-hack-law-sphere.vercel.app" // Frontend URL
-        : "http://localhost:5173", // Vite default port
+    origin: [
+      "https://we-hack-law-sphere.vercel.app",
+      "http://localhost:5173"
+    ],
     credentials: true,
   })
 );
 
-// Serve static files from the uploads directory
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+// Connect to MongoDB only when needed (for Vercel)
+let dbConnected = false;
+const connectToDatabase = async () => {
+  if (!dbConnected) {
+    await connectDB();
+    dbConnected = true;
+  }
+  return;
+};
 
-// Serve static files from public directory (for test pages)
-app.use("/public", express.static(path.join(__dirname, "public")));
+// Middleware to ensure DB connection
+app.use(async (req, res, next) => {
+  try {
+    await connectToDatabase();
+    next();
+  } catch (error) {
+    console.error("Database connection error:", error);
+    res.status(500).json({ success: false, message: "Database connection failed" });
+  }
+});
 
 // Initialize Auth.js
 initAuth(app);
 
-// Initialize Socket.io with CORS settings
-const io = new Server(server, {
-  cors: {
-    origin:
-      process.env.NODE_ENV === "production"
-        ? "https://we-hack-law-sphere.vercel.app" // Frontend URL
-        : "http://localhost:5173",
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    credentials: true,
-  },
-});
-
-// Setup Socket.io namespaces
-const communityNamespace = io.of("/community");
-
-// Socket.io event handlers
-communityNamespace.on("connection", (socket) => {
-  console.log("New client connected to community namespace:", socket.id);
-
-  // Join room for specific topics
-  socket.on("join-topic", (topicId) => {
-    socket.join(`topic-${topicId}`);
-    console.log(`Client ${socket.id} joined topic-${topicId}`);
-  });
-
-  // Leave topic room
-  socket.on("leave-topic", (topicId) => {
-    socket.leave(`topic-${topicId}`);
-    console.log(`Client ${socket.id} left topic-${topicId}`);
-  });
-
-  // Handle disconnection
-  socket.on("disconnect", () => {
-    console.log("Client disconnected:", socket.id);
-  });
-});
-
-// Export io for use in controllers
-export { io, communityNamespace };
-
-// Routes
+// API routes
 app.use("/api/users", userRoutes);
 app.use("/api/lawyers", lawyerRoutes);
 app.use("/api/resources", resourceRoutes);
@@ -107,59 +73,73 @@ app.get("/", (req, res) => {
   res.json({ message: "Welcome to LawSphere API" });
 });
 
-// Debug route to check file paths
-app.get("/api/debug/files", (req, res) => {
-  const uploadsDir = path.join(__dirname, "uploads");
-
-  try {
-    // Check if directory exists
-    if (!fs.existsSync(uploadsDir)) {
-      return res.status(404).json({
-        success: false,
-        message: "Uploads directory not found",
-      });
-    }
-
-    // List profiles directory
-    const profilesDir = path.join(uploadsDir, "profiles");
-    const profileFiles = fs.existsSync(profilesDir)
-      ? fs.readdirSync(profilesDir).map((file) => ({
-          name: file,
-          size: fs.statSync(path.join(profilesDir, file)).size,
-          url: `/uploads/profiles/${file}`,
-          fullUrl: `${req.protocol}://${req.get(
-            "host"
-          )}/uploads/profiles/${file}`,
-        }))
-      : [];
-
-    res.json({
-      success: true,
-      baseUrl: `${req.protocol}://${req.get("host")}`,
-      uploadsPath: uploadsDir,
-      profileFiles,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Error listing files",
-      error: error.message,
-    });
-  }
-});
-
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  console.error("Server error:", err);
   res.status(500).json({
-    message: err.message,
-    stack: process.env.NODE_ENV === "production" ? null : err.stack,
+    success: false,
+    message: "Server error",
+    error: process.env.NODE_ENV === "development" ? err.message : "Something went wrong"
   });
 });
 
-// Start server
-const PORT = process.env.PORT || 5000;
-// Use 'server' instead of 'app' to start the server with Socket.io
-server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT} in ${process.env.NODE_ENV} mode`);
-});
+// For local development
+if (process.env.NODE_ENV !== "production") {
+  // Create HTTP server only for local development
+  import("http").then((http) => {
+    import("socket.io").then(({ Server }) => {
+      const server = http.createServer(app);
+      const io = new Server(server, {
+        cors: {
+          origin: "http://localhost:5173",
+          methods: ["GET", "POST", "PUT", "DELETE"],
+          credentials: true,
+        }
+      });
+      
+      // Setup Socket.io namespaces
+      const communityNamespace = io.of("/community");
+
+      // Socket.io event handlers
+      communityNamespace.on("connection", (socket) => {
+        console.log("New client connected to community namespace:", socket.id);
+
+        socket.on("join-topic", (topicId) => {
+          socket.join(`topic-${topicId}`);
+          console.log(`Client ${socket.id} joined topic-${topicId}`);
+        });
+
+        socket.on("leave-topic", (topicId) => {
+          socket.leave(`topic-${topicId}`);
+          console.log(`Client ${socket.id} left topic-${topicId}`);
+        });
+
+        socket.on("disconnect", () => {
+          console.log("Client disconnected:", socket.id);
+        });
+      });
+
+      // Export io for use in controllers (local dev only)
+      global.io = io;
+      global.communityNamespace = communityNamespace;
+
+      // Start server for local dev
+      const PORT = process.env.PORT || 5000;
+      server.listen(PORT, () => {
+        console.log(`Server running on port ${PORT} in ${process.env.NODE_ENV} mode`);
+      });
+    });
+  });
+} else {
+  // In production, we don't start the server ourselves (Vercel does)
+  // Create placeholders for socket references
+  global.communityNamespace = {
+    emit: () => console.log("Socket.io emit called in serverless environment"),
+    to: () => ({
+      emit: () => console.log("Socket.io room emit called in serverless environment")
+    })
+  };
+}
+
+// Export for Vercel
+export default app;
