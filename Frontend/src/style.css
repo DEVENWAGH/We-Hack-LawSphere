@@ -71,6 +71,11 @@ a:hover {
   padding: 1rem;
 }
 
+/* Update Logo Styles */
+.logo {
+  cursor: pointer;
+}
+
 .logo h1 {
   font-size: 1.8rem;
   color: var(--primary-color);
@@ -78,6 +83,11 @@ a:hover {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  transition: color 0.3s ease;
+}
+
+.logo:hover h1 {
+  color: var(--secondary-color);
 }
 
 /* Navigation */
@@ -184,10 +194,25 @@ a:hover {
 .social-links a {
   color: var(--light-color);
   font-size: 1.5rem;
+  text-decoration: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
 }
 
 .social-links a:hover {
   color: var(--secondary-color);
+  background-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-3px);
+}
+
+.social-links a i {
+  pointer-events: none; /* This prevents the icon from interfering with clicks */
 }
 
 .footer-section.links ul {
@@ -969,4 +994,181 @@ button:disabled {
   background-color: #f8f9fa;
   border-radius: 8px;
   color: var(--gray-text);
+}
+
+/* Add custom Twitter X icon styling */
+.social-links .twitter-x {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.social-links .twitter-x svg {
+  width: 1em;
+  height: 1em;
+  fill: currentColor;
+}
+
+/* Profile image styles */
+.profile-image {
+  position: relative;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid var(--border-color);
+}
+
+.profile-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+/* Ensure user profile header image is circular and maintains aspect ratio */
+.user-profile-page .profile-image {
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid var(--border-color);
+}
+
+.user-profile-page .profile-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+/* Profile image preview in modals */
+.profile-image-preview {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid var(--border-color);
+}
+
+.profile-image-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+/* General circular profile image class that can be used anywhere */
+.profile-image-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid var(--border-color);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.profile-image-circle img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+/* User profile display in navbar/header */
+.user-profile .profile-image-circle {
+  width: 30px;
+  height: 30px;
+  margin-right: 8px;
+}
+
+/* Footer contact links */
+.contact-link {
+  color: var(--light-color);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: color 0.3s ease;
+}
+
+.contact-link:hover {
+  color: var(--secondary-color);
+}
+
+.location-link {
+  display: inline-flex;
+}
+
+/* Geolocation permission notification */
+.geo-permission-prompt {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: white;
+  padding: 15px 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  max-width: 90%;
+  width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.geo-permission-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.geo-enabled-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  background-color: #e3f2fd;
+  color: var(--primary-color);
+  margin-bottom: 10px;
+}
+
+.geo-enabled-indicator i {
+  color: var(--primary-color);
+}
+
+/* Location sorting notice */
+.location-sorting-notice {
+  background-color: #e3f2fd;
+  color: var(--primary-color);
+  padding: 10px 16px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+}
+
+.location-sorting-notice i {
+  color: var(--primary-color);
+  font-size: 1rem;
+}
+
+/* Improve lawyer distance display */
+.lawyer-distance {
+  background-color: #f8f9fa;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  margin-top: 8px;
+  color: #666;
 }

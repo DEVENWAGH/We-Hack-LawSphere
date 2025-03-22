@@ -11,7 +11,14 @@ import fs from "fs";
 export const getLawyers = async (req, res) => {
   try {
     // Get filter parameters from query string
-    const { practiceArea, location, serviceType, language } = req.query;
+    const {
+      practiceArea,
+      location,
+      serviceType,
+      language,
+      latitude,
+      longitude,
+    } = req.query;
 
     // Prepare filter object
     const filter = {};
@@ -42,19 +49,32 @@ export const getLawyers = async (req, res) => {
     });
 
     // Transform data for the frontend
-    const formattedLawyers = lawyers.map((lawyer) => ({
-      id: lawyer._id,
-      name: lawyer.user.name,
-      profileImage: lawyer.user.profileImage,
-      practiceAreas: lawyer.practiceAreas,
-      location: lawyer.officeAddress
-        ? `${lawyer.officeAddress.city}, ${lawyer.officeAddress.state}`
-        : "Location not specified",
-      serviceTypes: lawyer.serviceTypes,
-      languages: lawyer.languages,
-      rating: lawyer.averageRating,
-      reviewCount: lawyer.reviews.length,
-    }));
+    const formattedLawyers = lawyers.map((lawyer) => {
+      // Create a formatted lawyer object with basic info
+      const formattedLawyer = {
+        id: lawyer._id,
+        name: lawyer.user.name,
+        profileImage: lawyer.user.profileImage,
+        practiceAreas: lawyer.practiceAreas,
+        location: lawyer.officeAddress
+          ? `${lawyer.officeAddress.city}, ${lawyer.officeAddress.state}`
+          : "Location not specified",
+        serviceTypes: lawyer.serviceTypes,
+        languages: lawyer.languages,
+        rating: lawyer.averageRating,
+        reviewCount: lawyer.reviews.length,
+      };
+
+      // Add office coordinates if available for distance calculation
+      if (lawyer.officeAddress && lawyer.officeAddress.coordinates) {
+        formattedLawyer.officeCoordinates = {
+          latitude: lawyer.officeAddress.coordinates.latitude,
+          longitude: lawyer.officeAddress.coordinates.longitude,
+        };
+      }
+
+      return formattedLawyer;
+    });
 
     // If there are no lawyers in the database yet, use the mock data
     if (formattedLawyers.length === 0) {
@@ -64,6 +84,51 @@ export const getLawyers = async (req, res) => {
         count: 0,
         data: [],
         source: "database",
+      });
+    }
+
+    // Sort by proximity if coordinates provided
+    if (latitude && longitude) {
+      // Function to calculate distance (Haversine formula)
+      const calculateDistance = (lat1, lon1, lat2, lon2) => {
+        if (!lat1 || !lon1 || !lat2 || !lon2) return Infinity;
+
+        const R = 6371; // Radius of the earth in km
+        const dLat = ((lat2 - lat1) * Math.PI) / 180;
+        const dLon = ((lon2 - lon1) * Math.PI) / 180;
+
+        const a =
+          Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+          Math.cos((lat1 * Math.PI) / 180) *
+            Math.cos((lat2 * Math.PI) / 180) *
+            Math.sin(dLon / 2) *
+            Math.sin(dLon / 2);
+
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
+      };
+
+      // Sort lawyers by distance
+      formattedLawyers.sort((a, b) => {
+        const distA = a.officeCoordinates
+          ? calculateDistance(
+              latitude,
+              longitude,
+              a.officeCoordinates.latitude,
+              a.officeCoordinates.longitude
+            )
+          : Infinity;
+
+        const distB = b.officeCoordinates
+          ? calculateDistance(
+              latitude,
+              longitude,
+              b.officeCoordinates.latitude,
+              b.officeCoordinates.longitude
+            )
+          : Infinity;
+
+        return distA - distB;
       });
     }
 
@@ -221,7 +286,6 @@ export const uploadLawyerProfileImage = async (req, res) => {
     console.log("File uploaded:", profileImageUrl);
 
     // Find the lawyer profile associated with this user
-    // Fix: Change userId to user to match the model schema
     const lawyer = await LawyerModel.findOne({ user: req.user.id });
 
     // If lawyer profile exists, update it
@@ -237,7 +301,6 @@ export const uploadLawyerProfileImage = async (req, res) => {
     });
 
     // Return success response even if no lawyer profile exists yet
-    // This allows image uploads during registration process
     res.json({
       success: true,
       url: profileImageUrl,

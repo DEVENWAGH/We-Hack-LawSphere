@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Cloudinary Upload Test</title>
+    <title>ImageKit Upload Test</title>
     <style>
       body {
         font-family: Arial, sans-serif;
@@ -47,7 +47,7 @@
     </style>
   </head>
   <body>
-    <h1>Cloudinary Upload Test</h1>
+    <h1>ImageKit Upload Test</h1>
     <div class="container">
       <div class="form-group">
         <label for="token">JWT Token (copy from localStorage):</label>
@@ -58,7 +58,7 @@
         <input type="file" id="image" accept="image/*" />
         <img id="preview" class="preview" style="display: none" />
       </div>
-      <button id="upload">Upload to Cloudinary</button>
+      <button id="upload">Upload to ImageKit</button>
     </div>
 
     <div class="result" id="result" style="display: none"></div>
@@ -98,7 +98,7 @@
 
           try {
             const response = await fetch(
-              "http://localhost:5000/api/lawyers/test-cloudinary",
+              "http://localhost:5000/api/lawyers/test-imagekit",
               {
                 method: "POST",
                 headers: {
@@ -117,6 +117,7 @@
               result.innerHTML = `
                         <h3>Upload Successful!</h3>
                         <p>URL: <a href="${data.url}" target="_blank">${data.url}</a></p>
+                        <p>File ID: ${data.fileId}</p>
                         <img src="${data.url}" style="max-width: 300px;">
                     `;
             } else {

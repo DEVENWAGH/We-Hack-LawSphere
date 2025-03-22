@@ -5,22 +5,21 @@ import jwt from "jsonwebtoken";
 const userSchema = new mongoose.Schema({
   name: {
     type: String,
-    required: [true, "Please add a name"],
+    required: [true, "Name is required"],
     trim: true,
   },
   email: {
     type: String,
-    required: [true, "Please add an email"],
+    required: [true, "Email is required"],
     unique: true,
-    match: [
-      /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
-      "Please add a valid email",
-    ],
+    trim: true,
+    lowercase: true,
+    match: [/^\S+@\S+\.\S+$/, "Please enter a valid email"],
   },
   password: {
     type: String,
-    required: [true, "Please add a password"],
-    minlength: 6,
+    required: [true, "Password is required"],
+    minlength: [6, "Password must be at least 6 characters"],
     select: false,
   },
   role: {
@@ -34,11 +33,9 @@ const userSchema = new mongoose.Schema({
   },
   location: {
     type: String,
-    required: false,
   },
   bio: {
     type: String,
-    required: false,
   },
   resetPasswordToken: String,
   resetPasswordExpire: Date,

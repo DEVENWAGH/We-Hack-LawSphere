@@ -5,10 +5,23 @@ import { renderCommunityPage } from "../pages/community.js";
 import { renderAIAssistantPage } from "../pages/ai-assistant.js";
 import { renderLawyerRegisterPage } from "../pages/lawyer-register.js";
 import { renderLawyerProfilePage } from "../pages/lawyer-profile.js";
+import { renderUserProfilePage } from "../pages/user-profile.js"; // Add this import
+
+// Add a variable to track current page
+let currentPage = "home";
 
 // Add a new function for programmatic navigation
 export function navigateTo(page, params) {
   console.log(`Navigating programmatically to: ${page}`, params);
+
+  // Skip if already on this page
+  if (page === currentPage && page === "user-profile") {
+    console.log("Already on user profile page, skipping render");
+    return;
+  }
+
+  // Update current page
+  currentPage = page;
 
   // Clear active class from all links
   const navLinks = document.querySelectorAll("#main-nav a");
@@ -45,6 +58,9 @@ export function navigateTo(page, params) {
     case "lawyer-profile":
       renderLawyerProfilePage(params.id);
       break;
+    case "user-profile":
+      renderUserProfilePage();
+      break;
     default:
       renderHomePage();
   }
@@ -53,7 +69,7 @@ export function navigateTo(page, params) {
 function renderUserMenu(user) {
   return `
     <div class="user-menu">
-      <div class="user-profile-icon">
+      <div class="user-profile-icon" id="profile-icon">
         <img src="${user.profileImage || "/lawyer.png"}" alt="${
     user.name
   }" onerror="this.src='/lawyer.png'">
@@ -83,5 +99,15 @@ export function setupNavigation() {
       // Use the same navigation logic
       navigateTo(page);
     });
+  });
+
+  // Add event listener for user profile icon click
+  document.addEventListener("click", function (e) {
+    const profileIcon = e.target.closest("#profile-icon");
+
+    if (profileIcon) {
+      e.preventDefault();
+      navigateTo("user-profile");
+    }
   });
 }

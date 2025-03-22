@@ -1,17 +1,17 @@
 import "./style.css";
 import { renderHomePage } from "./pages/home.js";
-import { setupNavigation } from "./components/navigation.js";
+import { setupNavigation, navigateTo } from "./components/navigation.js";
 import { setupAuth } from "./services/auth.js";
 
 // Initialize the application
 function initApp() {
   const app = document.querySelector("#app");
 
-  // Create the app structure
+  // Create the app structure - now using the footer from home.js
   app.innerHTML = `
     <header class="header">
       <div class="container">
-        <div class="logo">
+        <div class="logo" id="logo-home-link">
           <h1><i class="fas fa-balance-scale"></i> LawSphere</h1>
         </div>
         <nav id="main-nav">
@@ -34,48 +34,65 @@ function initApp() {
       <!-- Page content will be loaded here -->
     </main>
 
-    <footer class="footer">
-      <div class="container">
-        <div class="footer-content">
-          <div class="footer-section about">
-            <h2><i class="fas fa-balance-scale"></i> LawSphere</h2>
-            <p>Connecting citizens with affordable legal services and promoting legal awareness.</p>
-            <div class="social-links">
-              <a href="#"><i class="fab fa-facebook"></i></a>
-              <a href="#"><i class="fab fa-twitter"></i></a>
-              <a href="#"><i class="fab fa-linkedin"></i></a>
-            </div>
-          </div>
-          <div class="footer-section links">
-            <h2>Quick Links</h2>
-            <ul>
-              <li><a href="#">About Us</a></li>
-              <li><a href="#">Privacy Policy</a></li>
-              <li><a href="#">Terms of Service</a></li>
-              <li><a href="#">Contact Us</a></li>
-            </ul>
-          </div>
-          <div class="footer-section contact">
-            <h2>Contact Info</h2>
-            <p><i class="fas fa-map-marker-alt"></i> 123 Legal Street, Justice City</p>
-            <p><i class="fas fa-phone"></i> +1 234 567 8900</p>
-            <p><i class="fas fa-envelope"></i> info@lawsphere.org</p>
-          </div>
-        </div>
-        <div class="footer-bottom">
-          &copy; 2023 LawSphere | All Rights Reserved
-        </div>
-      </div>
-    </footer>
+    <!-- Footer will be dynamically added from home.js -->
+    <div id="footer-container"></div>
   `;
 
   // Setup navigation and authentication
   setupNavigation();
   setupAuth();
 
+  // Setup logo click to navigate to home
+  document.getElementById("logo-home-link").addEventListener("click", (e) => {
+    e.preventDefault();
+    navigateTo("home");
+    // Scroll to top of the page
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+
+  // Import the renderFooter function and render it
+  import("./pages/home.js").then((module) => {
+    const footerContainer = document.getElementById("footer-container");
+    footerContainer.innerHTML = module.renderFooter();
+
+    // Set up social link event listeners
+    setupSocialLinks();
+  });
+
   // Render the home page by default
   renderHomePage();
 }
 
+// Function to set up the social links
+function setupSocialLinks() {
+  // Add event listeners to social media links to prevent default navigation behavior
+  document.querySelectorAll(".social-links .social-link").forEach((link) => {
+    link.addEventListener("click", function (e) {
+      // Stop the event from being handled by the app's navigation system
+      e.stopPropagation();
+
+      // Open the link in a new tab
+      window.open(this.href, "_blank");
+    });
+  });
+}
+
 // Initialize when DOM is ready
-document.addEventListener("DOMContentLoaded", initApp);
+document.addEventListener("DOMContentLoaded", () => {
+  initApp();
+
+  // Add a global click handler for external links
+  document.addEventListener("click", (e) => {
+    // Check if this is an external link (has target="_blank")
+    const externalLink = e.target.closest('a[target="_blank"]');
+    if (externalLink) {
+      e.preventDefault();
+      e.stopPropagation();
+      window.open(externalLink.href, "_blank");
+      return;
+    }
+
+    // Rest of your click handling code
+    // ...
+  });
+});

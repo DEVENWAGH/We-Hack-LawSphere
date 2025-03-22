@@ -56,6 +56,10 @@ const lawyerSchema = new mongoose.Schema({
     state: String,
     zipCode: String,
     country: String,
+    coordinates: {
+      latitude: Number,
+      longitude: Number,
+    },
   },
   consultationFee: {
     type: Number,

@@ -14,22 +14,22 @@ export function renderHomePage() {
     <section>
       <h2 class="section-title">Our Services</h2>
       <div class="features-grid">
-        <div class="feature-card card">
+        <div class="feature-card card" id="lawyer-directory-card">
           <i class="fas fa-user-tie"></i>
           <h3>Lawyer Directory</h3>
           <p>Find and connect with pro bono lawyers and affordable legal services in your area.</p>
         </div>
-        <div class="feature-card card">
+        <div class="feature-card card" id="ai-assistant-card">
           <i class="fas fa-robot"></i>
           <h3>AI Legal Assistant</h3>
           <p>Get instant answers to common legal questions through our AI-powered assistant.</p>
         </div>
-        <div class="feature-card card">
+        <div class="feature-card card" id="resource-library-card">
           <i class="fas fa-book-open"></i>
           <h3>Resource Library</h3>
           <p>Access guides, documents, and educational materials on various legal topics.</p>
         </div>
-        <div class="feature-card card">
+        <div class="feature-card card" id="community-forums-card">
           <i class="fas fa-comments"></i>
           <h3>Community Forums</h3>
           <p>Join discussions, share experiences, and learn from others facing similar legal issues.</p>
@@ -80,4 +80,86 @@ export function renderHomePage() {
   document.getElementById("ask-ai-btn").addEventListener("click", () => {
     document.querySelector('a[data-page="ai-assistant"]').click();
   });
+
+  // Add click handlers for service cards
+  document
+    .getElementById("lawyer-directory-card")
+    .addEventListener("click", () => {
+      document.querySelector('a[data-page="lawyers"]').click();
+    });
+
+  document.getElementById("ai-assistant-card").addEventListener("click", () => {
+    document.querySelector('a[data-page="ai-assistant"]').click();
+  });
+
+  document
+    .getElementById("resource-library-card")
+    .addEventListener("click", () => {
+      document.querySelector('a[data-page="resources"]').click();
+    });
+
+  document
+    .getElementById("community-forums-card")
+    .addEventListener("click", () => {
+      document.querySelector('a[data-page="community"]').click();
+    });
+
+  // After the main content is rendered, set up the footer links
+  setTimeout(() => {
+    // Add event listeners to social media links to prevent default navigation behavior
+    document.querySelectorAll(".social-links .social-link").forEach((link) => {
+      link.addEventListener("click", function (e) {
+        // Stop the event from being handled by the app's navigation system
+        e.stopPropagation();
+
+        // Open the link in a new tab
+        window.open(this.href, "_blank");
+      });
+    });
+  }, 100);
+}
+
+// Export the renderFooter function so it can be used in main.js
+export function renderFooter() {
+  return `
+    <footer class="footer">
+      <div class="container">
+        <div class="footer-content">
+          <div class="footer-section about">
+            <h2>About LawSphere</h2>
+            <p>LawSphere connects those in need with pro bono lawyers and affordable legal services.</p>
+            <div class="social-links">
+              <a href="https://x.com/LawSphere123" target="_blank" class="social-link twitter-x">
+                <svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512" fill="currentColor">
+                  <path d="M389.2 48h70.6L305.6 224.2 487 464H345L233.7 318.6 106.5 464H35.8L200.7 275.5 26.8 48H172.4L272.9 180.9 389.2 48zM364.4 421.8h39.1L151.1 88h-42L364.4 421.8z"/>
+                </svg>
+              </a>
+              <a href="https://www.facebook.com/profile.php?id=61574577748529" target="_blank" class="social-link"><i class="fab fa-facebook"></i></a>
+              <a href="https://www.instagram.com/lawspherejustice/?next=%2F" target="_blank" class="social-link"><i class="fab fa-instagram"></i></a>
+            </div>
+          </div>
+          <div class="footer-section links">
+            <h2>Quick Links</h2>
+            <ul>
+              <li><a href="#" data-page="home">Home</a></li>
+              <li><a href="#" data-page="lawyers">Find a Lawyer</a></li>
+              <li><a href="#" data-page="resources">Resources</a></li>
+              <li><a href="#" data-page="community">Community</a></li>
+              <li><a href="#" data-page="ai-assistant">AI Assistant</a></li>
+            </ul>
+          </div>
+          
+          <div class="footer-section contact">
+            <h2>Contact Us</h2>
+            <p><a href="tel:+919876543210" class="contact-link"><i class="fas fa-phone"></i> &nbsp; +91 9876543210</a></p>
+            <p><a href="mailto:contact@lawsphere.org" class="contact-link"><i class="fas fa-envelope"></i> &nbsp; contact@lawsphere.org</a></p>
+            <p><a href="https://maps.google.com/?q=123 Legal Street, Mumbai, India" target="_blank" class="contact-link location-link"><i class="fas fa-map-marker-alt"></i> &nbsp; 123 Legal Street, Mumbai, India</a></p>
+          </div>
+        </div>
+        <div class="footer-bottom">
+          &copy; ${new Date().getFullYear()} LawSphere | All rights reserved
+        </div>
+      </div>
+    </footer>
+  `;
 }

@@ -22,10 +22,10 @@ export function setupAuth() {
   function showLoggedInState(user) {
     authContainer.innerHTML = `
       <div class="user-profile">
-        <div class="profile-image-circle">
+        <div class="profile-image-circle" id="profile-icon">
           <img src="${user.profileImage || "/lawyer.png"}" alt="${
       user.name
-    }" onerror="this.src='/lawyer.png'">
+    }" onerror="this.src='/lawyer.png'" crossorigin="anonymous">
         </div>
         <span>Welcome, ${user.name}</span>
         <button id="logout-btn" class="btn btn-outline">Logout</button>
@@ -35,6 +35,26 @@ export function setupAuth() {
     document.getElementById("logout-btn").addEventListener("click", () => {
       localStorage.removeItem("user");
       location.reload();
+    });
+
+    // Add click event to profile icon with image preload to ensure proper rendering
+    const profileIcon = document.getElementById("profile-icon");
+    const profileImage = profileIcon.querySelector("img");
+
+    // Ensure image loads correctly
+    profileImage.onload = function () {
+      console.log("Header profile image loaded successfully");
+    };
+
+    profileImage.onerror = function () {
+      console.warn("Failed to load header profile image, using fallback");
+      this.src = "/lawyer.png";
+    };
+
+    profileIcon.addEventListener("click", () => {
+      import("../components/navigation.js").then((module) => {
+        module.navigateTo("user-profile");
+      });
     });
   }
 

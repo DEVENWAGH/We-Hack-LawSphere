@@ -74,46 +74,104 @@ export const userService = {
   login: (email, password) => api.post("/users/login", { email, password }),
   getProfile: () => api.get("/users/profile"),
   updateProfile: (userData) => api.put("/users/profile", userData),
-  uploadProfileImage: (formData) =>
-    api.post("/users/profile/upload", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    }),
+  uploadProfileImage: async (formData) => {
+    try {
+      return await api.post("/users/profile/upload", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data", // Important for file uploads
+        },
+      });
+    } catch (error) {
+      console.error("API Error - uploadProfileImage:", error);
+      throw error;
+    }
+  },
+  // Get user profile details
+  getUserProfile: () => {
+    return api.get("/users/profile");
+  },
+
+  // Update user profile details
+  updateUserProfile: (userData) => {
+    return api.put("/users/profile", userData);
+  },
+
+  // Upload profile image
+  uploadProfileImage: async (formData) => {
+    try {
+      return await api.post("/users/profile/upload", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+    } catch (error) {
+      console.error("API Error - uploadProfileImage:", error);
+      throw error;
+    }
+  },
+
+  // Get user consultations
+  getUserConsultations: () => {
+    return api.get("/users/consultations");
+  },
 };
 
 // Lawyer API services
 export const lawyerService = {
-  getLawyers: (filters) => api.get("/lawyers", { params: filters }),
+  getLawyers: async (filters = {}) => {
+    try {
+      const queryParams = [];
+
+      if (filters.practiceArea) {
+        queryParams.push(
+          `practiceArea=${encodeURIComponent(filters.practiceArea)}`
+        );
+      }
+
+      if (filters.location) {
+        queryParams.push(`location=${encodeURIComponent(filters.location)}`);
+      }
+
+      if (filters.serviceType) {
+        queryParams.push(
+          `serviceType=${encodeURIComponent(filters.serviceType)}`
+        );
+      }
+
+      if (filters.language) {
+        queryParams.push(`language=${encodeURIComponent(filters.language)}`);
+      }
+
+      // Add location coordinates if available
+      if (filters.latitude && filters.longitude) {
+        queryParams.push(`latitude=${filters.latitude}`);
+        queryParams.push(`longitude=${filters.longitude}`);
+      }
+
+      const queryString =
+        queryParams.length > 0 ? `?${queryParams.join("&")}` : "";
+      return await axios.get(`${API_URL}/lawyers${queryString}`);
+    } catch (error) {
+      console.error("Error fetching lawyers:", error);
+      throw error;
+    }
+  },
   getLawyerById: (id) => api.get(`/lawyers/${id}`),
   createLawyer: (lawyerData) => {
     console.log("Creating lawyer profile with data:", lawyerData);
     return api.post("/lawyers", lawyerData);
   },
-  uploadProfileImage: (formData) => {
-    console.log("Uploading profile image...");
-
-    // Log form data for debugging
-    if (formData instanceof FormData) {
-      for (let pair of formData.entries()) {
-        const fileInfo =
-          pair[1] instanceof File
-            ? `File: ${pair[1].name}, Size: ${pair[1].size}, Type: ${pair[1].type}`
-            : pair[1];
-        console.log(`Form data: ${pair[0]} = ${fileInfo}`);
-      }
-    }
-
-    // Set the correct content type and headers for file uploads
-    return api.post("/lawyers/upload-profile", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-      transformRequest: [
-        (data, headers) => {
-          // Don't convert FormData to JSON
-          return data;
+  uploadProfileImage: async (formData) => {
+    try {
+      return await api.post("/lawyers/upload-profile", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
         },
-      ],
-    });
+      });
+    } catch (error) {
+      console.error("API Error - uploadProfileImage:", error);
+      throw error;
+    }
   },
   updateLawyer: (lawyerId, lawyerData) => {
     console.log("Updating lawyer profile with data:", lawyerData);

@@ -141,16 +141,46 @@ export const getUserProfile = async (req, res) => {
  */
 export const updateUserProfile = async (req, res) => {
   try {
-    // For now, return a placeholder response
-    // In a real app, this would update the authenticated user's profile
+    const { name, location, bio } = req.body;
+
+    // Get user ID from the authenticated request
+    const userId = req.user.id;
+
+    // Find and update the user
+    const updatedUser = await UserModel.findByIdAndUpdate(
+      userId,
+      {
+        name,
+        location,
+        bio,
+      },
+      { new: true }
+    ).select("-password");
+
+    if (!updatedUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
     res.json({
       success: true,
+      message: "Profile updated successfully",
       data: {
-        message:
-          "Update profile feature will be implemented with proper authentication",
+        user: {
+          id: updatedUser._id,
+          name: updatedUser.name,
+          email: updatedUser.email,
+          role: updatedUser.role,
+          location: updatedUser.location,
+          bio: updatedUser.bio,
+          profileImage: updatedUser.profileImage,
+        },
       },
     });
   } catch (error) {
+    console.error("Update profile error:", error);
     res.status(500).json({
       success: false,
       message: "Server error",
@@ -174,9 +204,9 @@ export const uploadUserProfileImage = async (req, res) => {
       });
     }
 
-    // Get the Cloudinary URL from the uploaded file
+    // Get the URL from the uploaded file
     const profileImageUrl = req.file.path || req.file.secure_url;
-    console.log("File uploaded to Cloudinary:", profileImageUrl);
+    console.log("File uploaded to ImageKit:", profileImageUrl);
 
     // Update user profile with the new image URL
     const updatedUser = await UserModel.findByIdAndUpdate(
@@ -192,18 +222,21 @@ export const uploadUserProfileImage = async (req, res) => {
       });
     }
 
+    // Add cache-busting query parameter to the URL
+    const cacheBustUrl = `${profileImageUrl}?t=${Date.now()}`;
+
     res.json({
       success: true,
-      url: profileImageUrl,
+      url: cacheBustUrl,
       message: "Profile image uploaded successfully",
       data: {
-        profileImage: profileImageUrl,
+        profileImage: cacheBustUrl,
         user: {
           id: updatedUser._id,
           name: updatedUser.name,
           email: updatedUser.email,
           role: updatedUser.role,
-          profileImage: updatedUser.profileImage,
+          profileImage: cacheBustUrl,
         },
       },
     });
