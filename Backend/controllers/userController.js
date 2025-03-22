@@ -166,19 +166,52 @@ export const updateUserProfile = async (req, res) => {
  */
 export const uploadUserProfileImage = async (req, res) => {
   try {
-    // For now, return a placeholder response
-    // In a real app, this would handle file upload with authentication
+    // Check if a file was uploaded
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "No file uploaded",
+      });
+    }
+
+    // Get the Cloudinary URL from the uploaded file
+    const profileImageUrl = req.file.path || req.file.secure_url;
+    console.log("File uploaded to Cloudinary:", profileImageUrl);
+
+    // Update user profile with the new image URL
+    const updatedUser = await UserModel.findByIdAndUpdate(
+      req.user.id,
+      { profileImage: profileImageUrl },
+      { new: true }
+    ).select("-password");
+
+    if (!updatedUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
     res.json({
       success: true,
+      url: profileImageUrl,
+      message: "Profile image uploaded successfully",
       data: {
-        message:
-          "Profile image upload will be implemented with proper authentication",
+        profileImage: profileImageUrl,
+        user: {
+          id: updatedUser._id,
+          name: updatedUser.name,
+          email: updatedUser.email,
+          role: updatedUser.role,
+          profileImage: updatedUser.profileImage,
+        },
       },
     });
   } catch (error) {
+    console.error("Profile image upload error:", error);
     res.status(500).json({
       success: false,
-      message: "Server error",
+      message: "Server error: " + error.message,
       error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }

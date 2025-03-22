@@ -1,10 +1,30 @@
+import { lawyerService } from "../services/api.js";
+import { navigateTo } from "../components/navigation.js";
+
 export function renderLawyersPage() {
   const mainContent = document.getElementById("main-content");
+  const user = localStorage.getItem("user")
+    ? JSON.parse(localStorage.getItem("user"))
+    : null;
 
   mainContent.innerHTML = `
     <section class="lawyers-page">
       <h1 class="page-title">Find a Lawyer</h1>
       <p class="page-description">Connect with pro bono lawyers or affordable legal services in your area.</p>
+      
+      ${
+        user
+          ? `
+        <div class="register-prompt card">
+          <div class="prompt-content">
+            <h3>Are You a Lawyer?</h3>
+            <p>Register with us to offer your services to those in need of legal assistance.</p>
+          </div>
+          <button id="register-lawyer-btn" class="btn btn-primary">Register as a Lawyer</button>
+        </div>
+      `
+          : ""
+      }
       
       <div class="search-container card">
         <form id="lawyer-search-form">
@@ -13,13 +33,13 @@ export function renderLawyersPage() {
               <label for="practice-area">Practice Area</label>
               <select id="practice-area">
                 <option value="">All Areas</option>
-                <option value="family">Family Law</option>
-                <option value="criminal">Criminal Defense</option>
-                <option value="immigration">Immigration</option>
-                <option value="housing">Housing & Tenants Rights</option>
-                <option value="employment">Employment Law</option>
-                <option value="civil">Civil Rights</option>
-                <option value="consumer">Consumer Protection</option>
+                <option value="Family Law">Family Law</option>
+                <option value="Criminal Defense">Criminal Defense</option>
+                <option value="Immigration">Immigration</option>
+                <option value="Housing & Tenants Rights">Housing & Tenants Rights</option>
+                <option value="Employment Law">Employment Law</option>
+                <option value="Civil Rights">Civil Rights</option>
+                <option value="Consumer Protection">Consumer Protection</option>
               </select>
             </div>
             
@@ -32,10 +52,10 @@ export function renderLawyersPage() {
               <label for="service-type">Service Type</label>
               <select id="service-type">
                 <option value="">All Types</option>
-                <option value="pro-bono">Pro Bono</option>
-                <option value="low-cost">Low Cost</option>
-                <option value="sliding-scale">Sliding Scale</option>
-                <option value="standard">Standard Rates</option>
+                <option value="Pro Bono">Pro Bono</option>
+                <option value="Low Cost">Low Cost</option>
+                <option value="Sliding Scale">Sliding Scale</option>
+                <option value="Standard Rates">Standard Rates</option>
               </select>
             </div>
           </div>
@@ -45,118 +65,161 @@ export function renderLawyersPage() {
       </div>
       
       <div id="search-results" class="search-results">
-        <div class="lawyer-card card">
-          <div class="lawyer-info">
-            <img src="https://randomuser.me/api/portraits/women/65.jpg" alt="Jane Smith" class="lawyer-photo">
-            <div class="lawyer-details">
-              <h3>Jane Smith, Esq.</h3>
-              <p class="lawyer-specialties"><strong>Practice Areas:</strong> Family Law, Immigration</p>
-              <p><strong>Location:</strong> New York, NY</p>
-              <p><strong>Services:</strong> Pro Bono, Sliding Scale</p>
-              <p><strong>Languages:</strong> English, Spanish</p>
-              <div class="lawyer-rating">
-                <span class="stars">
-                  <i class="fas fa-star"></i>
-                  <i class="fas fa-star"></i>
-                  <i class="fas fa-star"></i>
-                  <i class="fas fa-star"></i>
-                  <i class="fas fa-star-half"></i>
-                </span>
-                <span>4.5/5 (28 reviews)</span>
-              </div>
-            </div>
-          </div>
-          <div class="lawyer-actions">
-            <button class="btn btn-outline view-profile-btn">View Profile</button>
-            <button class="btn btn-primary schedule-btn">Schedule Consultation</button>
-          </div>
-        </div>
-        
-        <div class="lawyer-card card">
-          <div class="lawyer-info">
-            <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="Michael Johnson" class="lawyer-photo">
-            <div class="lawyer-details">
-              <h3>Michael Johnson, Esq.</h3>
-              <p class="lawyer-specialties"><strong>Practice Areas:</strong> Housing Law, Consumer Protection</p>
-              <p><strong>Location:</strong> New York, NY</p>
-              <p><strong>Services:</strong> Low Cost</p>
-              <p><strong>Languages:</strong> English</p>
-              <div class="lawyer-rating">
-                <span class="stars">
-                  <i class="fas fa-star"></i>
-                  <i class="fas fa-star"></i>
-                  <i class="fas fa-star"></i>
-                  <i class="fas fa-star"></i>
-                  <i class="far fa-star"></i>
-                </span>
-                <span>4.0/5 (42 reviews)</span>
-              </div>
-            </div>
-          </div>
-          <div class="lawyer-actions">
-            <button class="btn btn-outline view-profile-btn">View Profile</button>
-            <button class="btn btn-primary schedule-btn">Schedule Consultation</button>
-          </div>
-        </div>
-        
-        <div class="lawyer-card card">
-          <div class="lawyer-info">
-            <img src="https://randomuser.me/api/portraits/women/33.jpg" alt="Sophia Rodriguez" class="lawyer-photo">
-            <div class="lawyer-details">
-              <h3>Sophia Rodriguez, Esq.</h3>
-              <p class="lawyer-specialties"><strong>Practice Areas:</strong> Immigration, Civil Rights</p>
-              <p><strong>Location:</strong> New York, NY</p>
-              <p><strong>Services:</strong> Pro Bono, Sliding Scale</p>
-              <p><strong>Languages:</strong> English, Spanish, Portuguese</p>
-              <div class="lawyer-rating">
-                <span class="stars">
-                  <i class="fas fa-star"></i>
-                  <i class="fas fa-star"></i>
-                  <i class="fas fa-star"></i>
-                  <i class="fas fa-star"></i>
-                  <i class="fas fa-star"></i>
-                </span>
-                <span>5.0/5 (17 reviews)</span>
-              </div>
-            </div>
-          </div>
-          <div class="lawyer-actions">
-            <button class="btn btn-outline view-profile-btn">View Profile</button>
-            <button class="btn btn-primary schedule-btn">Schedule Consultation</button>
-          </div>
-        </div>
+        <div class="loading-spinner">Loading lawyers...</div>
       </div>
     </section>
   `;
+
+  // Add event listener for lawyer registration button
+  if (user) {
+    document
+      .getElementById("register-lawyer-btn")
+      .addEventListener("click", () => {
+        try {
+          console.log("Register as lawyer button clicked");
+
+          // Check if user is already a lawyer
+          const userData = JSON.parse(localStorage.getItem("user"));
+          if (userData.role === "lawyer") {
+            alert("You are already registered as a lawyer.");
+            return;
+          }
+
+          console.log("Navigating to lawyer registration page");
+
+          // Use the programmatic navigation function instead of the temporary link approach
+          navigateTo("lawyer-register");
+        } catch (error) {
+          console.error("Error navigating to lawyer registration:", error);
+        }
+      });
+  }
+
+  // Load lawyers from API
+  loadLawyers();
 
   // Add search functionality
   document
     .getElementById("lawyer-search-form")
     .addEventListener("submit", (e) => {
       e.preventDefault();
-      // In a real app, this would make an API call to search for lawyers
-      alert("Search functionality would filter lawyers based on criteria");
-    });
 
-  // Add event listeners for lawyer actions
-  document.querySelectorAll(".view-profile-btn").forEach((btn) => {
-    btn.addEventListener("click", function () {
-      const lawyerName =
-        this.closest(".lawyer-card").querySelector("h3").textContent;
-      alert(`Viewing profile for ${lawyerName}`);
-    });
-  });
+      // Get filter values
+      const practiceArea = document.getElementById("practice-area").value;
+      const location = document.getElementById("location").value;
+      const serviceType = document.getElementById("service-type").value;
 
-  document.querySelectorAll(".schedule-btn").forEach((btn) => {
-    btn.addEventListener("click", function () {
-      const lawyerName =
-        this.closest(".lawyer-card").querySelector("h3").textContent;
-      showSchedulingModal(lawyerName);
+      // Apply filters
+      loadLawyers({ practiceArea, location, serviceType });
     });
-  });
 }
 
-function showSchedulingModal(lawyerName) {
+// Function to load lawyers from API
+async function loadLawyers(filters = {}) {
+  const resultsContainer = document.getElementById("search-results");
+
+  try {
+    // Show loading indicator
+    resultsContainer.innerHTML =
+      '<div class="loading-spinner">Loading lawyers...</div>';
+
+    // Get lawyers from API
+    const response = await lawyerService.getLawyers(filters);
+    const lawyers = response.data.data;
+
+    if (!lawyers || lawyers.length === 0) {
+      resultsContainer.innerHTML =
+        '<div class="no-results">No lawyers found matching your criteria.</div>';
+      return;
+    }
+
+    // Build HTML for each lawyer
+    const lawyersHTML = lawyers
+      .map(
+        (lawyer) => `
+      <div class="lawyer-card card" data-id="${lawyer.id}">
+        <div class="lawyer-info">
+          <img src="${lawyer.profileImage}" alt="${
+          lawyer.name
+        }" class="lawyer-photo">
+          <div class="lawyer-details">
+            <h3>${lawyer.name}</h3>
+            <p class="lawyer-specialties"><strong>Practice Areas:</strong> ${lawyer.practiceAreas.join(
+              ", "
+            )}</p>
+            <p><strong>Location:</strong> ${lawyer.location}</p>
+            <p><strong>Services:</strong> ${lawyer.serviceTypes.join(", ")}</p>
+            <p><strong>Languages:</strong> ${lawyer.languages.join(", ")}</p>
+            <div class="lawyer-rating">
+              <span class="stars">
+                ${generateStars(lawyer.rating)}
+              </span>
+              <span>${lawyer.rating}/5 (${lawyer.reviewCount} reviews)</span>
+            </div>
+          </div>
+        </div>
+        <div class="lawyer-actions">
+          <button class="btn btn-outline view-profile-btn">View Profile</button>
+          <button class="btn btn-primary schedule-btn">Schedule Consultation</button>
+        </div>
+      </div>
+    `
+      )
+      .join("");
+
+    resultsContainer.innerHTML = lawyersHTML;
+
+    // Add event listeners for lawyer actions
+    document.querySelectorAll(".view-profile-btn").forEach((btn) => {
+      btn.addEventListener("click", function () {
+        const lawyerId = this.closest(".lawyer-card").dataset.id;
+
+        // Navigate to lawyer profile page with the lawyer ID
+        navigateTo("lawyer-profile", { id: lawyerId });
+      });
+    });
+
+    document.querySelectorAll(".schedule-btn").forEach((btn) => {
+      btn.addEventListener("click", function () {
+        const lawyerId = this.closest(".lawyer-card").dataset.id;
+        const lawyerName =
+          this.closest(".lawyer-card").querySelector("h3").textContent;
+        showSchedulingModal(lawyerName, lawyerId);
+      });
+    });
+  } catch (error) {
+    console.error("Error loading lawyers:", error);
+    resultsContainer.innerHTML =
+      '<div class="error-message">Failed to load lawyers. Please try again later.</div>';
+  }
+}
+
+// Helper function to generate star rating HTML
+function generateStars(rating) {
+  let starsHTML = "";
+  const fullStars = Math.floor(rating);
+  const hasHalfStar = rating % 1 >= 0.5;
+
+  // Add full stars
+  for (let i = 0; i < fullStars; i++) {
+    starsHTML += '<i class="fas fa-star"></i>';
+  }
+
+  // Add half star if needed
+  if (hasHalfStar) {
+    starsHTML += '<i class="fas fa-star-half"></i>';
+  }
+
+  // Add empty stars
+  const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+  for (let i = 0; i < emptyStars; i++) {
+    starsHTML += '<i class="far fa-star"></i>';
+  }
+
+  return starsHTML;
+}
+
+function showSchedulingModal(lawyerName, lawyerId) {
   const modal = document.createElement("div");
   modal.classList.add("modal");
   modal.innerHTML = `

@@ -41,8 +41,23 @@ export const userService = {
 export const lawyerService = {
   getLawyers: (filters) => api.get("/lawyers", { params: filters }),
   getLawyerById: (id) => api.get(`/lawyers/${id}`),
+  createLawyer: (lawyerData) => {
+    console.log("Creating lawyer profile with data:", lawyerData);
+    return api.post("/lawyers", lawyerData);
+  },
+  uploadProfileImage: (formData) => {
+    console.log("Uploading profile image...");
+    return api.post("/lawyers/upload-profile", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
+  updateLawyer: (lawyerId, lawyerData) => {
+    console.log("Updating lawyer profile with data:", lawyerData);
+    return api.put(`/lawyers/${lawyerId}`, lawyerData);
+  },
   scheduleConsultation: (lawyerId, consultationData) =>
     api.post(`/lawyers/${lawyerId}/consultations`, consultationData),
+  getLawyerReviews: (lawyerId) => api.get(`/lawyers/${lawyerId}/reviews`),
   addReview: (lawyerId, reviewData) =>
     api.post(`/lawyers/${lawyerId}/reviews`, reviewData),
 };
