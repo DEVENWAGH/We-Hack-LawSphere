@@ -1,3 +1,4 @@
 export default {
-  maxDuration: 60  // increase function timeout limit
+  maxDuration: 10, // reduce to 10 seconds which is often enough
+  memory: 1024    // request 1GB of memory
 };

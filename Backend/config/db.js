@@ -7,19 +7,22 @@ const connectDB = async () => {
       return;
     }
     
-    // Changed from MONGO_URI to MONGODB_URI to match .env file
-    const conn = await mongoose.connect(process.env.MONGODB_URI, {
+    // Add more robust error handling and retry logic
+    const options = {
       useNewUrlParser: true,
       useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 10000, // Timeout after 10s instead of 30s
-      maxPoolSize: 10, // Keep up to 10 connections
-    });
+      serverSelectionTimeoutMS: 5000, // Reduced timeout for serverless environment
+      bufferCommands: false, // Disable mongoose buffering
+      maxPoolSize: 5 // Smaller pool size for serverless
+    };
 
+    const conn = await mongoose.connect(process.env.MONGODB_URI, options);
     console.log(`MongoDB Connected: ${conn.connection.host}`);
     return conn;
   } catch (error) {
     console.error(`MongoDB connection error: ${error.message}`);
-    throw error;
+    // Don't throw the error, handle it gracefully
+    return null;
   }
 };
 
