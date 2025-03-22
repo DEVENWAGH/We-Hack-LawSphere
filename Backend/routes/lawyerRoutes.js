@@ -10,7 +10,13 @@ import {
   updateLawyerProfile,
 } from "../controllers/lawyerController.js";
 import { protect } from "../config/auth.js";
-import { uploadProfile } from "../utils/cloudinary.js";
+import { uploadProfile, processUpload } from "../utils/imagekit.js";
+import path from "path";
+import fs from "fs";
+import {
+  getLawyerConsultations,
+  scheduleConsultation,
+} from "../controllers/consultationController.js";
 
 const router = express.Router();
 
@@ -43,9 +49,15 @@ router.post(
       next();
     });
   },
+  processUpload, // This middleware now handles both local storage and ImageKit uploads
   uploadLawyerProfileImage
 );
-router.post("/:id/consultations", protect, scheduleLawyerConsultation);
+
+// Consultation routes
+router.get("/:id/consultations", protect, getLawyerConsultations);
+router.post("/:id/consultations", protect, scheduleConsultation);
+
+// Review routes
 router.get("/:id/reviews", getLawyerReviews);
 router.post("/:id/reviews", protect, addLawyerReview);
 

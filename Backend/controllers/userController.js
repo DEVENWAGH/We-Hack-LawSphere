@@ -1,5 +1,5 @@
 import UserModel from "../models/User.js";
-import { uploadProfile } from "../utils/cloudinary.js";
+import { uploadProfile } from "../utils/imagekit.js";
 
 /**
  * @desc    Register a new user

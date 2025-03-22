@@ -3,6 +3,26 @@ import { lawyerService } from "../services/api.js";
 export function renderLawyerRegisterPage() {
   const mainContent = document.getElementById("main-content");
 
+  // Check if auth error is present in URL and handle it
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get("auth") === "error") {
+    localStorage.removeItem("user");
+    mainContent.innerHTML = `
+      <section class="lawyer-register-page">
+        <div class="card">
+          <h2>Authentication Failed</h2>
+          <p>Your session has expired or is invalid. Please log in again.</p>
+          <button id="login-redirect" class="btn btn-primary">Go to Login</button>
+        </div>
+      </section>
+    `;
+
+    document.getElementById("login-redirect").addEventListener("click", () => {
+      document.getElementById("login-btn").click();
+    });
+    return;
+  }
+
   // Check if user is logged in
   const user = localStorage.getItem("user");
   if (!user) {
@@ -536,7 +556,9 @@ export function renderLawyerRegisterPage() {
         console.log("Creating lawyer profile with data:", lawyerData);
 
         // Submit data
+        console.log("Sending lawyer registration data to server...");
         const response = await lawyerService.createLawyer(lawyerData);
+        console.log("Server response:", response.data);
 
         if (response.data.success) {
           // Update local storage with updated user role
@@ -559,6 +581,25 @@ export function renderLawyerRegisterPage() {
         }
       } catch (error) {
         console.error("Lawyer registration error:", error);
+
+        // Check specifically for auth errors
+        if (error.response?.status === 401) {
+          document.getElementById("form-error").textContent =
+            "Authentication failed. Please log in again.";
+          document.getElementById("form-error").style.display = "block";
+
+          // Re-enable the submit button but prepare to redirect
+          const submitBtn = document.querySelector('button[type="submit"]');
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = "Register as Lawyer";
+
+          // After a short delay, redirect to login
+          setTimeout(() => {
+            localStorage.removeItem("user");
+            document.getElementById("login-btn").click();
+          }, 3000);
+          return;
+        }
 
         const errorMessage =
           error.response?.data?.message ||

@@ -17,12 +17,55 @@ api.interceptors.request.use(
   (config) => {
     const user = localStorage.getItem("user");
     if (user) {
-      const { token } = JSON.parse(user);
-      config.headers.Authorization = `Bearer ${token}`;
+      try {
+        const { token } = JSON.parse(user);
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+      } catch (error) {
+        console.error("Error parsing user from localStorage:", error);
+        // Clear invalid data
+        localStorage.removeItem("user");
+      }
     }
     return config;
   },
   (error) => Promise.reject(error)
+);
+
+// Add response interceptor for handling auth errors
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    console.log("API Error:", error.response?.status, error.response?.data);
+
+    // Check for auth errors (401 Unauthorized)
+    if (error.response && error.response.status === 401) {
+      // Token is invalid or expired
+      console.error("Authentication error:", error.response.data);
+
+      // If token verification failed, clear localStorage and redirect
+      if (
+        error.response.data.message &&
+        (error.response.data.message.includes("token") ||
+          error.response.data.message.includes("signature") ||
+          error.response.data.message.includes("authorized"))
+      ) {
+        console.log("Clearing invalid authentication data");
+        localStorage.removeItem("user");
+
+        // Check if we're already on the home page to avoid infinite redirect
+        if (
+          window.location.pathname !== "/" &&
+          !window.location.search.includes("auth=error")
+        ) {
+          // Add auth=error parameter to signal authentication error
+          window.location.href = "/?auth=error";
+        }
+      }
+    }
+    return Promise.reject(error);
+  }
 );
 
 // User API services
@@ -47,8 +90,29 @@ export const lawyerService = {
   },
   uploadProfileImage: (formData) => {
     console.log("Uploading profile image...");
+
+    // Log form data for debugging
+    if (formData instanceof FormData) {
+      for (let pair of formData.entries()) {
+        const fileInfo =
+          pair[1] instanceof File
+            ? `File: ${pair[1].name}, Size: ${pair[1].size}, Type: ${pair[1].type}`
+            : pair[1];
+        console.log(`Form data: ${pair[0]} = ${fileInfo}`);
+      }
+    }
+
+    // Set the correct content type and headers for file uploads
     return api.post("/lawyers/upload-profile", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+      transformRequest: [
+        (data, headers) => {
+          // Don't convert FormData to JSON
+          return data;
+        },
+      ],
     });
   },
   updateLawyer: (lawyerId, lawyerData) => {
@@ -60,6 +124,12 @@ export const lawyerService = {
   getLawyerReviews: (lawyerId) => api.get(`/lawyers/${lawyerId}/reviews`),
   addReview: (lawyerId, reviewData) =>
     api.post(`/lawyers/${lawyerId}/reviews`, reviewData),
+  // New consultation management endpoints
+  getConsultations: (lawyerId) => api.get(`/lawyers/${lawyerId}/consultations`),
+  updateConsultation: (consultationId, updateData) =>
+    api.put(`/consultations/${consultationId}`, updateData),
+  rescheduleConsultation: (consultationId, rescheduleData) =>
+    api.put(`/consultations/${consultationId}/reschedule`, rescheduleData),
 };
 
 // Resource API services

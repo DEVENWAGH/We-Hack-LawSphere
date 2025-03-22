@@ -25,11 +25,26 @@ export async function renderLawyerProfilePage(lawyerId) {
       : null;
     const isProfileOwner = currentUser && lawyer.userId === currentUser.id;
 
+    // Fetch consultations if the current user is the lawyer
+    let consultations = [];
+    if (isProfileOwner) {
+      try {
+        const consultationsResponse = await lawyerService.getConsultations(
+          lawyerId
+        );
+        consultations = consultationsResponse.data.data || [];
+      } catch (error) {
+        console.error("Error fetching consultations:", error);
+      }
+    }
+
     mainContent.innerHTML = `
       <section class="lawyer-profile-page">
         <div class="profile-header">
           <div class="profile-image">
-            <img src="/lawyer.png"  alt="${lawyer.name}">
+            <img src="${
+              lawyer.profileImage ? lawyer.profileImage : "/lawyer.png"
+            }" alt="${lawyer.name}">
             ${
               isProfileOwner
                 ? `<button id="change-photo-btn" class="btn btn-sm btn-outline"><i class="fas fa-camera"></i> Change Photo</button>`
@@ -68,6 +83,11 @@ export async function renderLawyerProfilePage(lawyerId) {
           <button class="tab-btn active" data-tab="about">About</button>
           <button class="tab-btn" data-tab="education">Education</button>
           <button class="tab-btn" data-tab="reviews">Reviews</button>
+          ${
+            isProfileOwner
+              ? '<button class="tab-btn" data-tab="consultations">Consultations</button>'
+              : ""
+          }
         </div>
         
         <div class="profile-content">
@@ -127,6 +147,13 @@ export async function renderLawyerProfilePage(lawyerId) {
                   <div class="review-item">
                     <div class="review-header">
                       <div class="reviewer-info">
+                        <div class="profile-image-circle">
+                          <img src="${
+                            review.user.profileImage || "/lawyer.png"
+                          }" alt="${
+                          review.user.name
+                        }" onerror="this.src='/lawyer.png'">
+                        </div>
                         <h4>${review.user.name}</h4>
                         <span class="review-date">${new Date(
                           review.createdAt
@@ -145,6 +172,28 @@ export async function renderLawyerProfilePage(lawyerId) {
               }
             </div>
           </div>
+          
+          ${
+            isProfileOwner
+              ? `
+          <div class="tab-content" id="consultations-tab">
+            <h2>Consultation Requests</h2>
+            
+            <div class="consultation-filters">
+              <button class="consultation-filter-btn active" data-filter="all">All</button>
+              <button class="consultation-filter-btn" data-filter="pending">Pending</button>
+              <button class="consultation-filter-btn" data-filter="accepted">Accepted</button>
+              <button class="consultation-filter-btn" data-filter="rejected">Rejected</button>
+              <button class="consultation-filter-btn" data-filter="completed">Completed</button>
+            </div>
+            
+            <div class="consultations-container">
+              ${renderConsultations(consultations)}
+            </div>
+          </div>
+          `
+              : ""
+          }
         </div>
       </section>
     `;
@@ -205,6 +254,65 @@ export async function renderLawyerProfilePage(lawyerId) {
       changePhotoBtn.addEventListener("click", () =>
         showChangePhotoModal(lawyer, lawyerId)
       );
+    }
+
+    // Add consultation filter functionality if owner
+    if (isProfileOwner) {
+      document.querySelectorAll(".consultation-filter-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          // Remove active class from all filter buttons
+          document
+            .querySelectorAll(".consultation-filter-btn")
+            .forEach((b) => b.classList.remove("active"));
+
+          // Add active class to clicked button
+          btn.classList.add("active");
+
+          // Get filter value
+          const filter = btn.dataset.filter;
+
+          // Filter consultations
+          filterConsultations(filter);
+        });
+      });
+
+      // Add event listeners for consultation actions
+      document.querySelectorAll(".accept-btn").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          const consultationId = btn.dataset.id;
+          try {
+            await lawyerService.updateConsultation(consultationId, {
+              status: "accepted",
+            });
+            renderLawyerProfilePage(lawyerId); // Refresh page to show updated status
+          } catch (error) {
+            console.error("Error accepting consultation:", error);
+            alert("Failed to accept consultation. Please try again.");
+          }
+        });
+      });
+
+      document.querySelectorAll(".reject-btn").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          const consultationId = btn.dataset.id;
+          try {
+            await lawyerService.updateConsultation(consultationId, {
+              status: "rejected",
+            });
+            renderLawyerProfilePage(lawyerId); // Refresh page to show updated status
+          } catch (error) {
+            console.error("Error rejecting consultation:", error);
+            alert("Failed to reject consultation. Please try again.");
+          }
+        });
+      });
+
+      document.querySelectorAll(".reschedule-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const consultationId = btn.dataset.id;
+          showRescheduleModal(consultationId, lawyerId);
+        });
+      });
     }
   } catch (error) {
     console.error("Error loading lawyer profile:", error);
@@ -1123,6 +1231,161 @@ function showEditProfileModal(lawyer, lawyerId) {
         const submitBtn = e.target.querySelector('button[type="submit"]');
         submitBtn.disabled = false;
         submitBtn.innerHTML = "Save Changes";
+      }
+    });
+}
+
+// Function to render consultations based on their status
+function renderConsultations(consultations) {
+  if (!consultations || consultations.length === 0) {
+    return `<div class="no-consultations">No consultation requests yet.</div>`;
+  }
+
+  return consultations
+    .map(
+      (consultation) => `
+    <div class="consultation-item ${consultation.status}" data-status="${
+        consultation.status
+      }">
+      <div class="consultation-header">
+        <div class="consultation-client">
+          <div class="profile-image-circle">
+            <img src="${
+              consultation.client.profileImage || "/lawyer.png"
+            }" alt="${
+        consultation.client.name
+      }" onerror="this.src='/lawyer.png'">
+          </div>
+          <h4>${consultation.client.name}</h4>
+        </div>
+        <div class="consultation-status status-${consultation.status}">
+          ${capitalizeFirst(consultation.status)}
+        </div>
+      </div>
+      
+      <div class="consultation-details">
+        <p><strong>Date:</strong> ${new Date(
+          consultation.date
+        ).toLocaleDateString()}</p>
+        <p><strong>Time:</strong> ${consultation.time}</p>
+        <p><strong>Type:</strong> ${consultation.type}</p>
+        <p><strong>Issue:</strong> ${consultation.notes}</p>
+        ${
+          consultation.message
+            ? `<p><strong>Message:</strong> ${consultation.message}</p>`
+            : ""
+        }
+      </div>
+      
+      ${
+        consultation.status === "pending"
+          ? `
+      <div class="consultation-actions">
+        <button class="btn btn-sm btn-primary accept-btn" data-id="${consultation.id}">Accept</button>
+        <button class="btn btn-sm btn-outline reschedule-btn" data-id="${consultation.id}">Reschedule</button>
+        <button class="btn btn-sm btn-danger reject-btn" data-id="${consultation.id}">Reject</button>
+      </div>
+      `
+          : ""
+      }
+    </div>
+  `
+    )
+    .join("");
+}
+
+// Helper function to filter consultations
+function filterConsultations(filter) {
+  const consultationItems = document.querySelectorAll(".consultation-item");
+
+  consultationItems.forEach((item) => {
+    if (filter === "all" || item.dataset.status === filter) {
+      item.style.display = "block";
+    } else {
+      item.style.display = "none";
+    }
+  });
+}
+
+// Helper function to capitalize first letter
+function capitalizeFirst(string) {
+  return string.charAt(0).toUpperCase() + string.slice(1);
+}
+
+// Show modal for rescheduling a consultation
+function showRescheduleModal(consultationId, lawyerId) {
+  const modal = document.createElement("div");
+  modal.classList.add("modal");
+  modal.innerHTML = `
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2>Reschedule Consultation</h2>
+      <form id="reschedule-form">
+        <div class="form-group">
+          <label for="reschedule-date">Proposed Date</label>
+          <input type="date" id="reschedule-date" required min="${
+            new Date().toISOString().split("T")[0]
+          }">
+        </div>
+        <div class="form-group">
+          <label for="reschedule-time">Proposed Time</label>
+          <select id="reschedule-time" required>
+            <option value="">Select a time</option>
+            <option value="9:00">9:00 AM</option>
+            <option value="10:00">10:00 AM</option>
+            <option value="11:00">11:00 AM</option>
+            <option value="13:00">1:00 PM</option>
+            <option value="14:00">2:00 PM</option>
+            <option value="15:00">3:00 PM</option>
+            <option value="16:00">4:00 PM</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="reschedule-message">Message to client</label>
+          <textarea id="reschedule-message" rows="4" placeholder="Explain why you need to reschedule..."></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Send Reschedule Request</button>
+      </form>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  // Close modal when clicking on x
+  modal.querySelector(".close").addEventListener("click", () => {
+    document.body.removeChild(modal);
+  });
+
+  // Close modal when clicking outside
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) {
+      document.body.removeChild(modal);
+    }
+  });
+
+  // Handle form submit
+  document
+    .getElementById("reschedule-form")
+    .addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const date = document.getElementById("reschedule-date").value;
+      const time = document.getElementById("reschedule-time").value;
+      const message = document.getElementById("reschedule-message").value;
+
+      try {
+        await lawyerService.rescheduleConsultation(consultationId, {
+          date,
+          time,
+          message,
+        });
+
+        alert("Reschedule request sent to client.");
+        document.body.removeChild(modal);
+        renderLawyerProfilePage(lawyerId); // Refresh page to show updated status
+      } catch (error) {
+        console.error("Error rescheduling consultation:", error);
+        alert("Failed to reschedule consultation. Please try again.");
       }
     });
 }

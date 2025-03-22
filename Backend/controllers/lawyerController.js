@@ -1,5 +1,7 @@
 import LawyerModel from "../models/Lawyer.js";
 import UserModel from "../models/User.js";
+import { uploadToImageKit } from "../utils/imagekit.js";
+import fs from "fs";
 
 /**
  * @desc    Get all lawyers (with filters)
@@ -111,10 +113,12 @@ export const createLawyer = async (req, res) => {
       serviceTypes,
       education,
       barNumber,
+      barCouncil,
       languages,
       officeAddress,
       consultationFee,
       availability,
+      profileImage,
     } = req.body;
 
     // Validate required fields
@@ -166,15 +170,20 @@ export const createLawyer = async (req, res) => {
       serviceTypes,
       education,
       barNumber,
+      barCouncil,
       languages,
       officeAddress,
       consultationFee,
       availability,
+      profileImage: profileImage || undefined,
     });
     console.log("Lawyer profile created successfully:", lawyer._id);
 
     // Update user role to 'lawyer'
-    await UserModel.findByIdAndUpdate(userId, { role: "lawyer" });
+    await UserModel.findByIdAndUpdate(userId, {
+      role: "lawyer",
+      ...(profileImage && { profileImage }),
+    });
     console.log("User role updated to 'lawyer'");
 
     res.status(201).json({
@@ -207,53 +216,47 @@ export const uploadLawyerProfileImage = async (req, res) => {
       });
     }
 
-    // Get uploaded file URL from Cloudinary
-    const profileImageUrl = req.file.path || req.file.secure_url;
-    console.log("File uploaded to Cloudinary:", profileImageUrl);
+    // Get the profile image URL from the uploaded file
+    const profileImageUrl = req.file.secure_url;
+    console.log("File uploaded:", profileImageUrl);
 
-    // Find the lawyer profile for this user
+    // Find the lawyer profile associated with this user
+    // Fix: Change userId to user to match the model schema
     const lawyer = await LawyerModel.findOne({ user: req.user.id });
 
-    if (!lawyer) {
-      // Update just the user's profile image if no lawyer profile exists
-      const updatedUser = await UserModel.findByIdAndUpdate(
-        req.user.id,
-        { profileImage: profileImageUrl },
-        { new: true }
-      ).select("-password");
-
-      return res.status(200).json({
-        success: true,
-        url: profileImageUrl,
-        message: "User profile image updated successfully",
-        data: {
-          profileImage: profileImageUrl,
-        },
-      });
+    // If lawyer profile exists, update it
+    if (lawyer) {
+      // Update lawyer profile with the new image URL
+      lawyer.profileImage = profileImageUrl;
+      await lawyer.save();
     }
 
-    // Update both user and lawyer profile with the new image URL
+    // Always update the user model with the profile image
     await UserModel.findByIdAndUpdate(req.user.id, {
       profileImage: profileImageUrl,
     });
 
-    lawyer.profileImage = profileImageUrl;
-    await lawyer.save();
-
-    res.status(200).json({
+    // Return success response even if no lawyer profile exists yet
+    // This allows image uploads during registration process
+    res.json({
       success: true,
       url: profileImageUrl,
       message: "Profile image uploaded successfully",
       data: {
         profileImage: profileImageUrl,
+        user: {
+          id: req.user.id,
+          name: req.user.name,
+          email: req.user.email,
+          profileImage: profileImageUrl,
+        },
       },
     });
   } catch (error) {
     console.error("Profile image upload error:", error);
     res.status(500).json({
       success: false,
-      message: "Error uploading profile image: " + error.message,
-      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+      message: "Server error: " + error.message,
     });
   }
 };

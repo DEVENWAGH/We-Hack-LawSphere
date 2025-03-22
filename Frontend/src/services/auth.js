@@ -22,6 +22,11 @@ export function setupAuth() {
   function showLoggedInState(user) {
     authContainer.innerHTML = `
       <div class="user-profile">
+        <div class="profile-image-circle">
+          <img src="${user.profileImage || "/lawyer.png"}" alt="${
+      user.name
+    }" onerror="this.src='/lawyer.png'">
+        </div>
         <span>Welcome, ${user.name}</span>
         <button id="logout-btn" class="btn btn-outline">Logout</button>
       </div>
@@ -40,6 +45,12 @@ export function setupAuth() {
       <div class="modal-content">
         <span class="close">&times;</span>
         <h2>Login to Your Account</h2>
+        
+        <div class="login-type-selector">
+          <button type="button" class="login-type-btn active" data-type="user">Login as User</button>
+          <button type="button" class="login-type-btn" data-type="lawyer">Login as Lawyer</button>
+        </div>
+        
         <form id="login-form">
           <div class="form-group">
             <label for="email">Email</label>
@@ -56,6 +67,18 @@ export function setupAuth() {
     `;
 
     document.body.appendChild(modal);
+
+    // Setup login type selector
+    const loginTypeBtns = modal.querySelectorAll(".login-type-btn");
+    let selectedType = "user";
+
+    loginTypeBtns.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        loginTypeBtns.forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        selectedType = btn.dataset.type;
+      });
+    });
 
     // Close modal when clicking on x
     modal.querySelector(".close").addEventListener("click", () => {
@@ -83,6 +106,17 @@ export function setupAuth() {
           errorElement.style.display = "none";
           const response = await userService.login(email, password);
 
+          // Check if the user type matches the selected type
+          const userRole = response.data.user.role;
+          if (
+            (selectedType === "lawyer" && userRole !== "lawyer") ||
+            (selectedType === "user" && userRole === "lawyer")
+          ) {
+            errorElement.textContent = `This account is not registered as a ${selectedType}. Please select the correct login type.`;
+            errorElement.style.display = "block";
+            return;
+          }
+
           // Store the token and user data
           localStorage.setItem(
             "user",
@@ -97,7 +131,10 @@ export function setupAuth() {
           );
 
           document.body.removeChild(modal);
-          showLoggedInState({ name: response.data.user.name });
+          showLoggedInState({
+            name: response.data.user.name,
+            profileImage: response.data.user.profileImage,
+          });
         } catch (error) {
           console.error("Login error:", error);
           errorElement.textContent =
@@ -114,6 +151,12 @@ export function setupAuth() {
       <div class="modal-content">
         <span class="close">&times;</span>
         <h2>Create an Account</h2>
+        
+        <div class="signup-type-selector">
+          <button type="button" class="signup-type-btn active" data-type="user">Register as User</button>
+          <button type="button" class="signup-type-btn" data-type="lawyer">Register as Lawyer</button>
+        </div>
+        
         <form id="signup-form">
           <div class="form-group">
             <label for="name">Full Name</label>
@@ -138,6 +181,18 @@ export function setupAuth() {
     `;
 
     document.body.appendChild(modal);
+
+    // Setup signup type selector
+    const signupTypeBtns = modal.querySelectorAll(".signup-type-btn");
+    let selectedType = "user";
+
+    signupTypeBtns.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        signupTypeBtns.forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        selectedType = btn.dataset.type;
+      });
+    });
 
     // Close modal when clicking on x
     modal.querySelector(".close").addEventListener("click", () => {
@@ -189,7 +244,13 @@ export function setupAuth() {
           );
 
           document.body.removeChild(modal);
-          showLoggedInState({ name: response.data.user.name });
+
+          // If user selected to register as lawyer, redirect to lawyer registration page
+          if (selectedType === "lawyer") {
+            document.querySelector('a[data-page="lawyer-register"]').click();
+          } else {
+            showLoggedInState({ name: response.data.user.name });
+          }
         } catch (error) {
           console.error("Registration error:", error);
           errorElement.textContent =
@@ -200,3 +261,69 @@ export function setupAuth() {
       });
   }
 }
+
+// Improved version of refreshUserAuth function
+export function refreshUserAuth() {
+  const userJson = localStorage.getItem("user");
+  if (!userJson) return null;
+
+  try {
+    // Parse the stored user data
+    const userData = JSON.parse(userJson);
+
+    // Check if token exists
+    if (!userData.token) {
+      console.error("No token found in stored user data");
+      localStorage.removeItem("user");
+      return null;
+    }
+
+    // Get the token parts
+    const tokenParts = userData.token.split(".");
+    if (tokenParts.length !== 3) {
+      console.error("Invalid token format");
+      localStorage.removeItem("user");
+      return null;
+    }
+
+    // Parse the payload to check expiration
+    try {
+      const payload = JSON.parse(atob(tokenParts[1]));
+      const expirationTime = payload.exp * 1000; // Convert to milliseconds
+
+      if (Date.now() >= expirationTime) {
+        console.log("Token has expired, clearing user data");
+        localStorage.removeItem("user");
+        return null;
+      }
+
+      return userData;
+    } catch (e) {
+      console.error("Error parsing token:", e);
+      localStorage.removeItem("user");
+      return null;
+    }
+  } catch (e) {
+    console.error("Error parsing user JSON:", e);
+    localStorage.removeItem("user");
+    return null;
+  }
+}
+
+// Check token validity on application start and clean up invalid tokens
+document.addEventListener("DOMContentLoaded", () => {
+  console.log("Checking token validity on application startup");
+  const userData = refreshUserAuth();
+
+  // If we have a user but getting token issues, clear it
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get("auth") === "error") {
+    console.log("Auth error parameter detected, clearing token");
+    localStorage.removeItem("user");
+    alert("Your session has expired. Please log in again.");
+    // After a brief delay, redirect to home page without the query parameter
+    setTimeout(() => {
+      window.location.href = window.location.pathname;
+    }, 1000);
+  }
+});

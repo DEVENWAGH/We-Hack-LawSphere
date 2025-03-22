@@ -11,16 +11,15 @@
   "dependencies": {
     "@auth/express": "^0.9.0",
     "bcryptjs": "^2.4.3",
-    "cloudinary": "^1.41.0",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "google-auth-library": "^9.4.1",
+    "imagekit": "^6.0.0",
     "jsonwebtoken": "^9.0.2",
     "lawsphere-backend": "file:",
     "mongoose": "^7.6.3",
     "multer": "^1.4.5-lts.1",
-    "multer-storage-cloudinary": "^4.0.0",
     "node-fetch": "^3.3.2"
   },
   "devDependencies": {

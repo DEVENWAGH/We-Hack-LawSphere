@@ -12,20 +12,6 @@ export function renderLawyersPage() {
       <h1 class="page-title">Find a Lawyer</h1>
       <p class="page-description">Connect with pro bono lawyers or affordable legal services in your area.</p>
       
-      ${
-        user
-          ? `
-        <div class="register-prompt card">
-          <div class="prompt-content">
-            <h3>Are You a Lawyer?</h3>
-            <p>Register with us to offer your services to those in need of legal assistance.</p>
-          </div>
-          <button id="register-lawyer-btn" class="btn btn-primary">Register as a Lawyer</button>
-        </div>
-      `
-          : ""
-      }
-      
       <div class="search-container card">
         <form id="lawyer-search-form">
           <div class="search-inputs">
@@ -69,31 +55,6 @@ export function renderLawyersPage() {
       </div>
     </section>
   `;
-
-  // Add event listener for lawyer registration button
-  if (user) {
-    document
-      .getElementById("register-lawyer-btn")
-      .addEventListener("click", () => {
-        try {
-          console.log("Register as lawyer button clicked");
-
-          // Check if user is already a lawyer
-          const userData = JSON.parse(localStorage.getItem("user"));
-          if (userData.role === "lawyer") {
-            alert("You are already registered as a lawyer.");
-            return;
-          }
-
-          console.log("Navigating to lawyer registration page");
-
-          // Use the programmatic navigation function instead of the temporary link approach
-          navigateTo("lawyer-register");
-        } catch (error) {
-          console.error("Error navigating to lawyer registration:", error);
-        }
-      });
-  }
 
   // Load lawyers from API
   loadLawyers();
@@ -139,9 +100,9 @@ async function loadLawyers(filters = {}) {
         (lawyer) => `
       <div class="lawyer-card card" data-id="${lawyer.id}">
         <div class="lawyer-info">
-          <img src="${lawyer.profileImage}" alt="${
+          <img src="${lawyer.profileImage || "/lawyer.png"}" alt="${
           lawyer.name
-        }" class="lawyer-photo">
+        }" class="lawyer-photo" onerror="this.src='/lawyer.png'">
           <div class="lawyer-details">
             <h3>${lawyer.name}</h3>
             <p class="lawyer-specialties"><strong>Practice Areas:</strong> ${lawyer.practiceAreas.join(

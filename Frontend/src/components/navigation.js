@@ -50,6 +50,20 @@ export function navigateTo(page, params) {
   }
 }
 
+function renderUserMenu(user) {
+  return `
+    <div class="user-menu">
+      <div class="user-profile-icon">
+        <img src="${user.profileImage || "/lawyer.png"}" alt="${
+    user.name
+  }" onerror="this.src='/lawyer.png'">
+      </div>
+      <span>${user.name}</span>
+      <!-- Rest of your user menu -->
+    </div>
+  `;
+}
+
 export function setupNavigation() {
   const navLinks = document.querySelectorAll("#main-nav a");
 

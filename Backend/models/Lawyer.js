@@ -6,6 +6,10 @@ const lawyerSchema = new mongoose.Schema({
     ref: "User",
     required: true,
   },
+  profileImage: {
+    type: String,
+    default: "/lawyer.png",
+  },
   practiceAreas: [
     {
       type: String,
@@ -110,7 +114,7 @@ const lawyerSchema = new mongoose.Schema({
 
 // Calculate average rating when reviews are modified
 lawyerSchema.pre("save", function (next) {
-  if (this.reviews.length > 0) {
+  if (this.reviews && this.reviews.length > 0) {
     this.averageRating =
       this.reviews.reduce((sum, review) => sum + review.rating, 0) /
       this.reviews.length;
