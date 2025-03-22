@@ -39,7 +39,7 @@ app.use(
   cors({
     origin:
       process.env.NODE_ENV === "production"
-        ? "https://we-hack-law-sphere.vercel.app/" // Update with your production domain
+        ? "https://we-hack-law-sphere.vercel.app" // Frontend URL
         : "http://localhost:5173", // Vite default port
     credentials: true,
   })
@@ -59,8 +59,8 @@ const io = new Server(server, {
   cors: {
     origin:
       process.env.NODE_ENV === "production"
-        ? "https://lawsphere.org" // Production frontend URL
-        : "http://localhost:3000", // Development frontend URL
+        ? "https://we-hack-law-sphere.vercel.app" // Frontend URL
+        : "http://localhost:5173",
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
   },

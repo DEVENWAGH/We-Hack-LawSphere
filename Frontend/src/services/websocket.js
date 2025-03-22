@@ -1,7 +1,7 @@
 import { io } from "socket.io-client";
 
 const API_URL = import.meta.env.PROD
-  ? "https://api.lawsphere.org" // Change to your production API URL
+  ? "https://lawsphere-api.vercel.app" // Updated production API URL
   : "http://localhost:5000";
 
 // Create a WebSocket connection to the community namespace

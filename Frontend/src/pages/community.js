@@ -89,40 +89,44 @@ export function renderCommunityPage() {
     onNewTopic: (newTopic) => {
       // Add the new topic to the top of the list
       const topicsList = document.getElementById("topics-list");
-      if (topicsList && !topicsList.querySelector('.error-message')) {
+      if (topicsList && !topicsList.querySelector(".error-message")) {
         // If we have topics list and it's not showing an error
         const firstTopic = topicsList.firstChild;
         const topicElement = createTopicElement(newTopic);
-        
+
         if (firstTopic) {
           topicsList.insertBefore(topicElement, firstTopic);
         } else {
           // If list was empty
-          topicsList.innerHTML = '';
+          topicsList.innerHTML = "";
           topicsList.appendChild(topicElement);
         }
-        
+
         // Add event listeners to the new topic
         addTopicEventListeners(topicElement, newTopic.id);
       }
     },
     onTopicVoteUpdate: (data) => {
       // Update vote count for a topic
-      const topicElement = document.querySelector(`.topic-card[data-id="${data.topicId}"]`);
+      const topicElement = document.querySelector(
+        `.topic-card[data-id="${data.topicId}"]`
+      );
       if (topicElement) {
-        const voteScoreElement = topicElement.querySelector('.vote-score');
+        const voteScoreElement = topicElement.querySelector(".vote-score");
         if (voteScoreElement) {
           const previousValue = parseInt(voteScoreElement.textContent) || 0;
           voteScoreElement.textContent = data.voteScore;
-          
+
           // Apply vote animation
-          voteScoreElement.classList.add(data.voteScore > previousValue ? "vote-up" : "vote-down");
+          voteScoreElement.classList.add(
+            data.voteScore > previousValue ? "vote-up" : "vote-down"
+          );
           setTimeout(() => {
             voteScoreElement.classList.remove("vote-up", "vote-down");
           }, 1000);
         }
       }
-    }
+    },
   });
 
   // Load initial topics and categories from API
@@ -140,22 +144,28 @@ async function loadCategories() {
   try {
     const response = await communityService.getCategories();
     const categories = response.data.data;
-    
+
     const categoryList = document.querySelector(".category-list");
     if (categories && categories.length > 0) {
-      categoryList.innerHTML = categories.map(category => `
+      categoryList.innerHTML = categories
+        .map(
+          (category) => `
         <div class="category-item" data-category="${category.name}">
           <div class="category-icon"><i class="fas ${category.icon}"></i></div>
           <div class="category-info">
             <h3>${category.name}</h3>
-            <p>Discussions about ${category.description || category.name.toLowerCase()}</p>
+            <p>Discussions about ${
+              category.description || category.name.toLowerCase()
+            }</p>
           </div>
           <div class="category-stats">
             <div><strong>${category.topics}</strong> topics</div>
             <div><strong>${category.posts}</strong> posts</div>
           </div>
         </div>
-      `).join('');
+      `
+        )
+        .join("");
 
       // Add event listeners for forum categories
       document.querySelectorAll(".category-item").forEach((item) => {
@@ -173,10 +183,11 @@ async function loadCategories() {
 // Load topics from API
 async function loadTopics(page = 1, category = null, search = null) {
   const topicsList = document.getElementById("topics-list");
-  
+
   try {
-    topicsList.innerHTML = '<div class="loading-spinner">Loading discussions...</div>';
-    
+    topicsList.innerHTML =
+      '<div class="loading-spinner">Loading discussions...</div>';
+
     // Prepare query parameters
     const params = { page };
     if (category) params.category = category;
@@ -185,29 +196,30 @@ async function loadTopics(page = 1, category = null, search = null) {
     // Fetch topics from API
     const response = await communityService.getTopics(params);
     const data = response.data;
-    
+
     if (!data.success) {
       throw new Error(data.message || "Failed to load topics");
     }
-    
+
     const topics = data.data || [];
-    
+
     renderTopics(topics);
-    
+
     // Update pagination controls
     document.getElementById("page-indicator").textContent = `Page ${page}`;
     document.getElementById("prev-page-btn").disabled = page <= 1;
     document.getElementById("next-page-btn").disabled = topics.length < 10; // Assuming 10 per page or check data.hasMore
   } catch (error) {
     console.error("Error loading topics:", error);
-    topicsList.innerHTML = '<div class="error-message">Failed to load discussions. Please try again later.</div>';
+    topicsList.innerHTML =
+      '<div class="error-message">Failed to load discussions. Please try again later.</div>';
   }
 }
 
 // Render topics to the DOM
 function renderTopics(topics) {
   const topicsList = document.getElementById("topics-list");
-  
+
   if (!topics || topics.length === 0) {
     topicsList.innerHTML =
       '<div class="no-topics">No discussions found. Be the first to start a conversation!</div>';
@@ -297,11 +309,14 @@ function addTopicEventListeners(topicElement, topicId) {
 // Filter topics by category
 function loadTopicsByCategory(category) {
   const topicsList = document.getElementById("topics-list");
-  topicsList.innerHTML = '<div class="loading-spinner">Loading discussions...</div>';
+  topicsList.innerHTML =
+    '<div class="loading-spinner">Loading discussions...</div>';
 
   // Update heading to show selected category
-  document.querySelector(".topics-header h2").textContent = `${category} Discussions`;
-  
+  document.querySelector(
+    ".topics-header h2"
+  ).textContent = `${category} Discussions`;
+
   // Load topics for the selected category
   loadTopics(1, category);
 }
@@ -309,11 +324,14 @@ function loadTopicsByCategory(category) {
 // Filter topics by search term
 function filterTopicsBySearch(searchTerm) {
   const topicsList = document.getElementById("topics-list");
-  topicsList.innerHTML = '<div class="loading-spinner">Searching discussions...</div>';
+  topicsList.innerHTML =
+    '<div class="loading-spinner">Searching discussions...</div>';
 
   // Update heading to show search query
-  document.querySelector(".topics-header h2").textContent = `Search Results: "${searchTerm}"`;
-  
+  document.querySelector(
+    ".topics-header h2"
+  ).textContent = `Search Results: "${searchTerm}"`;
+
   // Load topics with search filter
   loadTopics(1, null, searchTerm);
 }
@@ -375,11 +393,8 @@ async function viewTopic(topicId) {
 
   try {
     // Load topic details and comments in parallel
-    await Promise.all([
-      loadTopicDetail(topicId),
-      loadComments(topicId)
-    ]);
-    
+    await Promise.all([loadTopicDetail(topicId), loadComments(topicId)]);
+
     // Setup WebSocket listeners for this topic
     const cleanupListeners = communityWebSocket.setupTopicDetailListeners(
       topicId,
@@ -395,15 +410,21 @@ async function viewTopic(topicId) {
         onReplyVoteUpdate: (data) => {
           try {
             // Update the vote score for the reply
-            const replyElement = document.querySelector(`.comment[data-id="${data.replyId}"]`);
+            const replyElement = document.querySelector(
+              `.comment[data-id="${data.replyId}"]`
+            );
             if (replyElement) {
-              const voteScoreElement = replyElement.querySelector('.vote-score');
+              const voteScoreElement =
+                replyElement.querySelector(".vote-score");
               if (voteScoreElement) {
-                const previousValue = parseInt(voteScoreElement.textContent) || 0;
+                const previousValue =
+                  parseInt(voteScoreElement.textContent) || 0;
                 voteScoreElement.textContent = data.voteScore;
-                
+
                 // Apply vote animation
-                voteScoreElement.classList.add(data.voteScore > previousValue ? "vote-up" : "vote-down");
+                voteScoreElement.classList.add(
+                  data.voteScore > previousValue ? "vote-up" : "vote-down"
+                );
                 setTimeout(() => {
                   voteScoreElement.classList.remove("vote-up", "vote-down");
                 }, 1000);
@@ -415,13 +436,12 @@ async function viewTopic(topicId) {
         },
       }
     );
-    
+
     // Store cleanup function to call when leaving the topic view
     window.communityCleanup = cleanupListeners;
-    
   } catch (error) {
     console.error("Error loading topic:", error);
-    document.getElementById("topic-detail").innerHTML = 
+    document.getElementById("topic-detail").innerHTML =
       '<div class="error-message">Failed to load topic details. Please try again later.</div>';
   }
 
@@ -437,9 +457,11 @@ async function viewTopic(topicId) {
       return;
     }
 
-    const commentContent = document.getElementById("comment-content").value.trim();
+    const commentContent = document
+      .getElementById("comment-content")
+      .value.trim();
     const isAnonymous = document.getElementById("comment-anonymous").checked;
-    
+
     if (commentContent) {
       try {
         await submitComment(topicId, commentContent, isAnonymous);
@@ -461,11 +483,11 @@ async function loadTopicDetail(topicId) {
   try {
     const response = await communityService.getTopicById(topicId);
     const data = response.data;
-    
+
     if (!data.success) {
       throw new Error(data.message || "Failed to load topic details");
     }
-    
+
     const topic = data.data;
 
     // Render topic detail
@@ -489,10 +511,15 @@ async function loadTopicDetail(topicId) {
       topic.user.name || "Anonymous User"
     }" class="author-image" onerror="this.src='/user.png'">
               <div>
-                <span class="author-name">${topic.anonymous ? "Anonymous" : topic.user.name}</span>
-                <span class="author-joined">Member since ${
-                  new Date(topic.user.createdAt).toLocaleDateString('en-US', {year: 'numeric', month: 'long'}) 
+                <span class="author-name">${
+                  topic.anonymous ? "Anonymous" : topic.user.name
                 }</span>
+                <span class="author-joined">Member since ${new Date(
+                  topic.user.createdAt
+                ).toLocaleDateString("en-US", {
+                  year: "numeric",
+                  month: "long",
+                })}</span>
               </div>
             </div>
             
@@ -506,7 +533,9 @@ async function loadTopicDetail(topicId) {
           </div>
           
           <div class="topic-stats">
-            <span><i class="fas fa-comment"></i> ${topic.replies ? topic.replies.length : 0} replies</span>
+            <span><i class="fas fa-comment"></i> ${
+              topic.replies ? topic.replies.length : 0
+            } replies</span>
             <span><i class="fas fa-eye"></i> ${topic.views} views</span>
           </div>
           
@@ -523,42 +552,46 @@ async function loadTopicDetail(topicId) {
     topicDetail.querySelector(".vote-up-btn").addEventListener("click", () => {
       voteTopic(topicId, "up");
     });
-    
-    topicDetail.querySelector(".vote-down-btn").addEventListener("click", () => {
-      voteTopic(topicId, "down");
-    });
-    
+
+    topicDetail
+      .querySelector(".vote-down-btn")
+      .addEventListener("click", () => {
+        voteTopic(topicId, "down");
+      });
   } catch (error) {
     console.error("Error loading topic details:", error);
-    topicDetail.innerHTML = '<div class="error-message">Failed to load topic details. Please try again later.</div>';
+    topicDetail.innerHTML =
+      '<div class="error-message">Failed to load topic details. Please try again later.</div>';
   }
 }
 
 // Load comments for a topic from API
 async function loadComments(topicId) {
   const commentsList = document.getElementById("comments-list");
-  commentsList.innerHTML = '<div class="loading-spinner">Loading comments...</div>';
+  commentsList.innerHTML =
+    '<div class="loading-spinner">Loading comments...</div>';
 
   try {
     // Get topic details which include replies/comments
     const response = await communityService.getTopicById(topicId);
     const data = response.data;
-    
+
     if (!data.success) {
       throw new Error(data.message || "Failed to load comments");
     }
-    
+
     const topic = data.data;
-    
+
     // Ensure topic has a replies property, even if it's empty
     if (!topic.replies) {
       topic.replies = [];
     }
-    
+
     const comments = topic.replies;
 
     if (comments.length === 0) {
-      commentsList.innerHTML = '<div class="no-comments">No comments yet. Be the first to comment!</div>';
+      commentsList.innerHTML =
+        '<div class="no-comments">No comments yet. Be the first to comment!</div>';
       return;
     }
 
@@ -569,7 +602,8 @@ async function loadComments(topicId) {
     setupCommentEventListeners(topicId);
   } catch (error) {
     console.error("Error loading comments:", error);
-    commentsList.innerHTML = '<div class="error-message">Failed to load comments. Please try again later.</div>';
+    commentsList.innerHTML =
+      '<div class="error-message">Failed to load comments. Please try again later.</div>';
   }
 }
 
@@ -579,7 +613,7 @@ function renderComments(comments) {
     console.error("Invalid comments data:", comments);
     return '<div class="error-message">Unable to display comments. Invalid data format.</div>';
   }
-  
+
   return comments
     .map(
       (comment) => `
@@ -597,7 +631,9 @@ function renderComments(comments) {
         comment.user?.name || "Anonymous User"
       }" class="author-image" onerror="this.src='/user.png'">
             <div>
-              <span class="author-name">${comment.user?.name || "Anonymous User"}</span>
+              <span class="author-name">${
+                comment.user?.name || "Anonymous User"
+              }</span>
               ${
                 comment.isLawyerVerified
                   ? '<span class="verified-badge" title="Verified Legal Professional"><i class="fas fa-check-circle"></i> Verified</span>'
@@ -637,10 +673,14 @@ function renderComments(comments) {
                 <div class="comment-content">
                   <div class="comment-header">
                     <div class="comment-author">
-                      <img src="${reply.user?.profileImage || "/user.png"}" alt="${
+                      <img src="${
+                        reply.user?.profileImage || "/user.png"
+                      }" alt="${
                   reply.user?.name || "Anonymous User"
                 }" class="author-image" onerror="this.src='/user.png'">
-                      <span class="author-name">${reply.user?.name || "Anonymous User"}</span>
+                      <span class="author-name">${
+                        reply.user?.name || "Anonymous User"
+                      }</span>
                     </div>
                     <span class="comment-timestamp">${formatTimeAgo(
                       reply.createdAt
@@ -704,8 +744,9 @@ function setupCommentEventListeners(topicId) {
       });
 
       // Toggle this reply form
-      replyForm.style.display = replyForm.style.display === "none" ? "block" : "none";
-      
+      replyForm.style.display =
+        replyForm.style.display === "none" ? "block" : "none";
+
       if (replyForm.style.display === "block") {
         replyForm.querySelector("textarea").focus();
       }
@@ -728,22 +769,24 @@ function setupCommentEventListeners(topicId) {
       const comment = form.closest(".comment");
       const commentId = comment.dataset.id;
       const replyContent = form.querySelector("textarea").value.trim();
-      
+
       if (replyContent) {
         try {
           form.querySelector("button[type='submit']").disabled = true;
-          form.querySelector("button[type='submit']").textContent = "Posting...";
-          
+          form.querySelector("button[type='submit']").textContent =
+            "Posting...";
+
           await submitReply(topicId, commentId, replyContent);
-          
+
           // Form will be removed when comments are reloaded
         } catch (error) {
           console.error("Error submitting reply:", error);
           alert("Failed to post reply. Please try again.");
-          
+
           // Reset button state
           form.querySelector("button[type='submit']").disabled = false;
-          form.querySelector("button[type='submit']").textContent = "Post Reply";
+          form.querySelector("button[type='submit']").textContent =
+            "Post Reply";
         }
       }
     });
@@ -756,10 +799,10 @@ function setupCommentEventListeners(topicId) {
         alert("Please log in to vote on comments.");
         return;
       }
-      
+
       const comment = btn.closest(".comment");
       const commentId = comment.dataset.id;
-      
+
       try {
         await voteComment(topicId, commentId, "up");
       } catch (error) {
@@ -774,10 +817,10 @@ function setupCommentEventListeners(topicId) {
         alert("Please log in to vote on comments.");
         return;
       }
-      
+
       const comment = btn.closest(".comment");
       const commentId = comment.dataset.id;
-      
+
       try {
         await voteComment(topicId, commentId, "down");
       } catch (error) {
@@ -795,26 +838,26 @@ async function submitComment(topicId, content, isAnonymous = false) {
     if (!userData) {
       throw new Error("You must be logged in to comment");
     }
-    
+
     const user = JSON.parse(userData);
-    
+
     // Prepare comment data
     const commentData = {
       content,
-      anonymous: isAnonymous
+      anonymous: isAnonymous,
     };
-    
+
     // Send to API
     const response = await communityService.addReply(topicId, commentData);
-    
+
     if (!response.data.success) {
       throw new Error(response.data.message || "Failed to post comment");
     }
-    
+
     // Clear the form
     document.getElementById("comment-content").value = "";
     document.getElementById("comment-anonymous").checked = false;
-    
+
     return response.data.data;
   } catch (error) {
     console.error("Error submitting comment:", error);
@@ -830,23 +873,23 @@ async function submitReply(topicId, commentId, content) {
     if (!userData) {
       throw new Error("You must be logged in to reply");
     }
-    
+
     // Prepare reply data
     const replyData = {
       content,
-      parentId: commentId
+      parentId: commentId,
     };
-    
+
     // Send to API
     const response = await communityService.addReply(topicId, replyData);
-    
+
     if (!response.data.success) {
       throw new Error(response.data.message || "Failed to post reply");
     }
-    
+
     // Reload comments to show the new reply
     await loadComments(topicId);
-    
+
     return response.data.data;
   } catch (error) {
     console.error("Error submitting reply:", error);
@@ -862,16 +905,17 @@ async function voteTopic(topicId, direction) {
       alert("Please log in to vote on topics.");
       return;
     }
-    
+
     // Call the appropriate API endpoint
-    const response = direction === "up" 
-      ? await communityService.upvoteTopic(topicId)
-      : await communityService.downvoteTopic(topicId);
-    
+    const response =
+      direction === "up"
+        ? await communityService.upvoteTopic(topicId)
+        : await communityService.downvoteTopic(topicId);
+
     if (!response.data.success) {
       throw new Error(response.data.message || "Failed to register vote");
     }
-    
+
     // The UI will be updated by the WebSocket event
   } catch (error) {
     console.error(`Error ${direction}voting topic:`, error);
@@ -887,14 +931,18 @@ async function voteComment(topicId, commentId, direction) {
       alert("Please log in to vote on comments.");
       return;
     }
-    
+
     // Call the API endpoint for voting on a comment/reply
-    const response = await communityService.voteReply(topicId, commentId, direction);
-    
+    const response = await communityService.voteReply(
+      topicId,
+      commentId,
+      direction
+    );
+
     if (!response.data.success) {
       throw new Error(response.data.message || "Failed to register vote");
     }
-    
+
     // The UI will be updated by the WebSocket event
   } catch (error) {
     console.error(`Error ${direction}voting comment:`, error);
@@ -979,67 +1027,70 @@ function showNewTopicModal() {
   });
 
   // Handle form submit
-  document.getElementById("new-topic-form").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    
-    const submitBtn = document.getElementById("create-topic-submit");
-    const errorElement = document.getElementById("create-topic-error");
-    
-    // Get form data
-    const title = document.getElementById("topic-title").value.trim();
-    const category = document.getElementById("topic-category").value;
-    const content = document.getElementById("topic-content").value.trim();
-    const anonymous = document.getElementById("topic-anonymous").checked;
-    
-    // Validate
-    if (!title || !category || !content) {
-      errorElement.textContent = "Please fill in all required fields";
-      errorElement.style.display = "block";
-      return;
-    }
+  document
+    .getElementById("new-topic-form")
+    .addEventListener("submit", async (e) => {
+      e.preventDefault();
 
-    try {
-      // Set button to loading state
-      submitBtn.disabled = true;
-      submitBtn.textContent = "Creating...";
-      errorElement.style.display = "none";
-      
-      // Create the topic via API
-      const topicData = { title, category, content, anonymous };
-      const response = await communityService.createTopic(topicData);
-      
-      if (!response.data.success) {
-        throw new Error(response.data.message || "Failed to create topic");
+      const submitBtn = document.getElementById("create-topic-submit");
+      const errorElement = document.getElementById("create-topic-error");
+
+      // Get form data
+      const title = document.getElementById("topic-title").value.trim();
+      const category = document.getElementById("topic-category").value;
+      const content = document.getElementById("topic-content").value.trim();
+      const anonymous = document.getElementById("topic-anonymous").checked;
+
+      // Validate
+      if (!title || !category || !content) {
+        errorElement.textContent = "Please fill in all required fields";
+        errorElement.style.display = "block";
+        return;
       }
-      
-      const newTopic = response.data.data;
-      
-      // Close the modal
-      document.body.removeChild(modal);
-      
-      // Show success message
-      alert("Topic created successfully!");
-      
-      // If we're already on the topics list page, refresh it
-      if (document.querySelector(".topics-list")) {
-        loadTopics();
-      } else {
-        // If we're on a topic detail page, navigate to the topics list
-        renderCommunityPage();
+
+      try {
+        // Set button to loading state
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Creating...";
+        errorElement.style.display = "none";
+
+        // Create the topic via API
+        const topicData = { title, category, content, anonymous };
+        const response = await communityService.createTopic(topicData);
+
+        if (!response.data.success) {
+          throw new Error(response.data.message || "Failed to create topic");
+        }
+
+        const newTopic = response.data.data;
+
+        // Close the modal
+        document.body.removeChild(modal);
+
+        // Show success message
+        alert("Topic created successfully!");
+
+        // If we're already on the topics list page, refresh it
+        if (document.querySelector(".topics-list")) {
+          loadTopics();
+        } else {
+          // If we're on a topic detail page, navigate to the topics list
+          renderCommunityPage();
+        }
+
+        // Optionally navigate to the newly created topic
+        // viewTopic(newTopic._id);
+      } catch (error) {
+        console.error("Error creating topic:", error);
+        errorElement.textContent =
+          error.message || "Failed to create topic. Please try again.";
+        errorElement.style.display = "block";
+
+        // Reset button state
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Create Topic";
       }
-      
-      // Optionally navigate to the newly created topic
-      // viewTopic(newTopic._id);
-    } catch (error) {
-      console.error("Error creating topic:", error);
-      errorElement.textContent = error.message || "Failed to create topic. Please try again.";
-      errorElement.style.display = "block";
-      
-      // Reset button state
-      submitBtn.disabled = false;
-      submitBtn.textContent = "Create Topic";
-    }
-  });
+    });
 
   // Set up toolbar functionality
   setupToolbarButtons();
@@ -1048,17 +1099,20 @@ function showNewTopicModal() {
 // Load categories for the new topic dropdown
 async function loadCategoriesForDropdown() {
   const categorySelect = document.getElementById("topic-category");
-  
+
   try {
     const response = await communityService.getCategories();
     const categories = response.data.data;
-    
+
     if (categories && categories.length) {
       // Add options to select
-      const options = categories.map(category => 
-        `<option value="${category.name}">${category.name}</option>`
-      ).join('');
-      
+      const options = categories
+        .map(
+          (category) =>
+            `<option value="${category.name}">${category.name}</option>`
+        )
+        .join("");
+
       // Insert after the placeholder option
       categorySelect.innerHTML = `<option value="">Select a category</option>${options}`;
     }
@@ -1086,7 +1140,7 @@ function setupToolbarButtons() {
       const end = textarea.selectionEnd;
       const selectedText = textarea.value.substring(start, end);
       let formattedText = "";
-      
+
       switch (format) {
         case "bold":
           formattedText = `**${selectedText}**`;
@@ -1107,13 +1161,13 @@ function setupToolbarButtons() {
             .join("\n");
           break;
       }
-      
+
       textarea.value =
         textarea.value.substring(0, start) +
         formattedText +
         textarea.value.substring(end);
       textarea.focus();
-      
+
       // Set selection to after the newly inserted formatted text
       textarea.selectionStart = start + formattedText.length;
       textarea.selectionEnd = start + formattedText.length;
@@ -1123,10 +1177,10 @@ function setupToolbarButtons() {
 
 // Helper function to create a topic element for WebSocket updates
 function createTopicElement(topic) {
-  const topicElement = document.createElement('div');
-  topicElement.className = 'topic-card';
-  topicElement.setAttribute('data-id', topic.id);
-  
+  const topicElement = document.createElement("div");
+  topicElement.className = "topic-card";
+  topicElement.setAttribute("data-id", topic.id);
+
   topicElement.innerHTML = `
     <div class="topic-vote">
       <button class="vote-up-btn" title="Upvote"><i class="fas fa-chevron-up"></i></button>
@@ -1148,17 +1202,21 @@ function createTopicElement(topic) {
         <div class="topic-stats">
           <span><i class="fas fa-comment"></i> ${topic.replies} replies</span>
           <span><i class="fas fa-eye"></i> ${topic.views} views</span>
-          <span><i class="fas fa-clock"></i> ${formatTimeAgo(topic.createdAt)}</span>
+          <span><i class="fas fa-clock"></i> ${formatTimeAgo(
+            topic.createdAt
+          )}</span>
         </div>
         
         <div class="topic-author">
-          <img src="${topic.user.profileImage || "/user.png"}" alt="${topic.user.name || "Anonymous User"}" class="author-image" onerror="this.src='/user.png'">
+          <img src="${topic.user.profileImage || "/user.png"}" alt="${
+    topic.user.name || "Anonymous User"
+  }" class="author-image" onerror="this.src='/user.png'">
           <span>${topic.user.name || "Anonymous User"}</span>
         </div>
       </div>
     </div>
   `;
-  
+
   return topicElement;
 }
 
@@ -1208,7 +1266,7 @@ function truncateText(text, maxLength) {
 // Helper: Format content with simple markdown support
 function formatContent(content) {
   if (!content) return "";
-  
+
   // For a real app, you'd want a proper markdown parser
   // This is a very simplified version
 
