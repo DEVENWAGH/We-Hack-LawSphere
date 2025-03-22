@@ -215,6 +215,12 @@ export const communityService = {
   upvoteTopic: (topicId) => api.put(`/community/topics/${topicId}/upvote`),
   downvoteTopic: (topicId) => api.put(`/community/topics/${topicId}/downvote`),
   getCategories: () => api.get("/community/categories"),
+  voteReply: (topicId, replyId, direction) =>
+    api.put(
+      `/community/topics/${topicId}/replies/${replyId}/${
+        direction === "up" ? "upvote" : "downvote"
+      }`
+    ),
 };
 
 // AI Assistant API services

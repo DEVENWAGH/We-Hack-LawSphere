@@ -21,34 +21,51 @@ export function renderHomePage() {
         "ourServices"
       )}</h2>
       <div class="features-grid">
-        <div class="feature-card card" id="lawyer-directory-card">
+        <a class="card1" href="#" id="lawyer-directory-card">
           <i class="fas fa-user-tie"></i>
           <h3 data-i18n="lawyerDirectory">${translate("lawyerDirectory")}</h3>
-          <p data-i18n="lawyerDirectoryDesc">${translate(
+          <p class="small" data-i18n="lawyerDirectoryDesc">${translate(
             "lawyerDirectoryDesc"
           )}</p>
-        </div>
-        <div class="feature-card card" id="ai-assistant-card">
+          <div class="go-corner">
+            <div class="go-arrow">→</div>
+          </div>
+        </a>
+        
+        <a class="card1" href="#" id="ai-assistant-card">
           <i class="fas fa-robot"></i>
           <h3 data-i18n="aiAssistantService">${translate(
             "aiAssistantService"
           )}</h3>
-          <p data-i18n="aiAssistantDesc">${translate("aiAssistantDesc")}</p>
-        </div>
-        <div class="feature-card card" id="resource-library-card">
+          <p class="small" data-i18n="aiAssistantDesc">${translate(
+            "aiAssistantDesc"
+          )}</p>
+          <div class="go-corner">
+            <div class="go-arrow">→</div>
+          </div>
+        </a>
+        
+        <a class="card1" href="#" id="resource-library-card">
           <i class="fas fa-book-open"></i>
           <h3 data-i18n="resourceLibrary">${translate("resourceLibrary")}</h3>
-          <p data-i18n="resourceLibraryDesc">${translate(
+          <p class="small" data-i18n="resourceLibraryDesc">${translate(
             "resourceLibraryDesc"
           )}</p>
-        </div>
-        <div class="feature-card card" id="community-forums-card">
+          <div class="go-corner">
+            <div class="go-arrow">→</div>
+          </div>
+        </a>
+        
+        <a class="card1" href="#" id="community-forums-card">
           <i class="fas fa-comments"></i>
           <h3 data-i18n="communityForums">${translate("communityForums")}</h3>
-          <p data-i18n="communityForumsDesc">${translate(
+          <p class="small" data-i18n="communityForumsDesc">${translate(
             "communityForumsDesc"
           )}</p>
-        </div>
+          <div class="go-corner">
+            <div class="go-arrow">→</div>
+          </div>
+        </a>
       </div>
     </section>
     

@@ -6,6 +6,9 @@ import { fileURLToPath } from "url";
 import connectDB from "./config/db.js";
 import { initAuth } from "./config/auth.js";
 import fs from "fs";
+// Add Socket.io imports
+import http from "http";
+import { Server } from "socket.io";
 
 // Import routes
 import userRoutes from "./routes/userRoutes.js";
@@ -23,6 +26,8 @@ connectDB();
 
 // Initialize Express app
 const app = express();
+// Create HTTP server for Socket.io
+const server = http.createServer(app);
 
 // Get dirname equivalent in ES modules
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -34,7 +39,7 @@ app.use(
   cors({
     origin:
       process.env.NODE_ENV === "production"
-        ? "https://lawsphere.org" // Update with your production domain
+        ? "https://we-hack-law-sphere.vercel.app/" // Update with your production domain
         : "http://localhost:5173", // Vite default port
     credentials: true,
   })
@@ -48,6 +53,46 @@ app.use("/public", express.static(path.join(__dirname, "public")));
 
 // Initialize Auth.js
 initAuth(app);
+
+// Initialize Socket.io with CORS settings
+const io = new Server(server, {
+  cors: {
+    origin:
+      process.env.NODE_ENV === "production"
+        ? "https://lawsphere.org" // Production frontend URL
+        : "http://localhost:3000", // Development frontend URL
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
+  },
+});
+
+// Setup Socket.io namespaces
+const communityNamespace = io.of("/community");
+
+// Socket.io event handlers
+communityNamespace.on("connection", (socket) => {
+  console.log("New client connected to community namespace:", socket.id);
+
+  // Join room for specific topics
+  socket.on("join-topic", (topicId) => {
+    socket.join(`topic-${topicId}`);
+    console.log(`Client ${socket.id} joined topic-${topicId}`);
+  });
+
+  // Leave topic room
+  socket.on("leave-topic", (topicId) => {
+    socket.leave(`topic-${topicId}`);
+    console.log(`Client ${socket.id} left topic-${topicId}`);
+  });
+
+  // Handle disconnection
+  socket.on("disconnect", () => {
+    console.log("Client disconnected:", socket.id);
+  });
+});
+
+// Export io for use in controllers
+export { io, communityNamespace };
 
 // Routes
 app.use("/api/users", userRoutes);
@@ -114,6 +159,7 @@ app.use((err, req, res, next) => {
 
 // Start server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+// Use 'server' instead of 'app' to start the server with Socket.io
+server.listen(PORT, () => {
   console.log(`Server running on port ${PORT} in ${process.env.NODE_ENV} mode`);
 });
