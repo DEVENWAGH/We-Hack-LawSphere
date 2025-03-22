@@ -200,6 +200,7 @@ export const resourceService = {
   getResources: (filters) => api.get("/resources", { params: filters }),
   getResourceById: (id) => api.get(`/resources/${id}`),
   getResourceCategories: () => api.get("/resources/categories"),
+  incrementView: (id) => api.put(`/resources/${id}/view`),
   incrementDownload: (id) => api.put(`/resources/${id}/download`),
   getApiUrl: () => API_URL,
 };

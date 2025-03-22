@@ -43,9 +43,6 @@ app.use(
 // Serve static files from the uploads directory
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// Serve static files from the resources directory
-app.use("/resources", express.static(path.join(__dirname, "resources")));
-
 // Serve static files from public directory (for test pages)
 app.use("/public", express.static(path.join(__dirname, "public")));
 
