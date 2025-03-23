@@ -129,14 +129,35 @@ export function renderCommunityPage() {
     },
   });
 
+  // In production, poll for updates every 30 seconds as WebSocket fallback
+  let pollInterval = null;
+  if (import.meta.env.PROD) {
+    pollInterval = setInterval(() => {
+      loadTopics(getCurrentPage());
+    }, 30000); // Poll every 30 seconds
+  }
+
   // Load initial topics and categories from API
   loadTopics();
   loadCategories();
 
-  // Clean up WebSocket event listeners when leaving the page
+  // Clean up WebSocket event listeners and polling when leaving the page
   return () => {
     communityWebSocket.cleanupTopicListeners();
+    if (pollInterval) {
+      clearInterval(pollInterval);
+    }
   };
+}
+
+// Helper function to get current page
+function getCurrentPage() {
+  const pageIndicator = document.getElementById("page-indicator");
+  if (!pageIndicator) return 1;
+
+  const pageText = pageIndicator.textContent || "";
+  const match = pageText.match(/\d+/);
+  return match ? parseInt(match[0], 10) : 1;
 }
 
 // Load categories from API
@@ -437,8 +458,21 @@ async function viewTopic(topicId) {
       }
     );
 
+    // In production, poll for updates every 30 seconds as WebSocket fallback
+    let topicPollInterval = null;
+    if (import.meta.env.PROD) {
+      topicPollInterval = setInterval(() => {
+        loadComments(topicId);
+      }, 30000); // Poll every 30 seconds
+    }
+
     // Store cleanup function to call when leaving the topic view
-    window.communityCleanup = cleanupListeners;
+    window.communityCleanup = () => {
+      cleanupListeners();
+      if (topicPollInterval) {
+        clearInterval(topicPollInterval);
+      }
+    };
   } catch (error) {
     console.error("Error loading topic:", error);
     document.getElementById("topic-detail").innerHTML =

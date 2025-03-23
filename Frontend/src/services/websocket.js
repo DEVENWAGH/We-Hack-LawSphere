@@ -4,39 +4,62 @@ const API_URL = import.meta.env.PROD
   ? "https://lawsphere-api.vercel.app" // Updated production API URL
   : "http://localhost:5000";
 
-// Create a WebSocket connection to the community namespace
-const communitySocket = io(`${API_URL}/community`, {
-  autoConnect: false,
-  reconnection: true,
-  reconnectionAttempts: 5,
-  reconnectionDelay: 1000,
-  timeout: 10000,
-});
-
-// Connection event handlers
-communitySocket.on("connect", () => {
-  console.log("Connected to community WebSocket server");
-});
-
-communitySocket.on("connect_error", (error) => {
-  console.error("Socket connection error:", error);
-  // Don't repeatedly try to reconnect in production
-  if (import.meta.env.PROD) {
-    communitySocket.disconnect();
-  }
-});
-
-communitySocket.on("disconnect", (reason) => {
-  console.log("Disconnected from WebSocket server:", reason);
-});
-
-// Create a fallback mechanism when sockets aren't available
+// Create a more robust fallback mechanism
 const socketFallback = {
   connected: false,
+  connect: () => console.log("Socket fallback: connect called"),
+  disconnect: () => console.log("Socket fallback: disconnect called"),
   emit: () => console.log("Socket fallback: emit called"),
   on: () => console.log("Socket fallback: on called"),
   off: () => console.log("Socket fallback: off called"),
+  of: () => socketFallback,
+  to: () => socketFallback,
+  join: () => {},
+  leave: () => {},
 };
+
+// Determine if we should use real sockets or fallback
+const useRealSockets = !import.meta.env.PROD;
+
+// Create a WebSocket connection to the community namespace or use fallback
+let communitySocket;
+
+try {
+  if (useRealSockets) {
+    communitySocket = io(`${API_URL}/community`, {
+      autoConnect: false,
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+      timeout: 10000,
+    });
+  } else {
+    console.log("Production environment detected - using WebSocket fallback");
+    communitySocket = socketFallback;
+  }
+} catch (error) {
+  console.error("Error initializing socket:", error);
+  communitySocket = socketFallback;
+}
+
+// Connection event handlers - only attach if using real sockets
+if (useRealSockets) {
+  communitySocket.on("connect", () => {
+    console.log("Connected to community WebSocket server");
+  });
+
+  communitySocket.on("connect_error", (error) => {
+    console.error("Socket connection error:", error);
+    // Don't repeatedly try to reconnect in production
+    if (import.meta.env.PROD) {
+      communitySocket.disconnect();
+    }
+  });
+
+  communitySocket.on("disconnect", (reason) => {
+    console.log("Disconnected from WebSocket server:", reason);
+  });
+}
 
 // Event handlers setup - to be called from UI components
 const setupTopicListeners = (callbacks = {}) => {
@@ -91,15 +114,8 @@ const cleanupTopicListeners = () => {
 // Connect to WebSocket server - call this when user logs in
 const connectWebSocket = () => {
   try {
-    if (!communitySocket.connected) {
-      // Only try to connect in development or if we're confident it will work
-      if (!import.meta.env.PROD) {
-        communitySocket.connect();
-      } else {
-        console.log(
-          "WebSocket connections not supported in production. Using fallback mode."
-        );
-      }
+    if (useRealSockets && !communitySocket.connected) {
+      communitySocket.connect();
     }
   } catch (error) {
     console.error("Error connecting to WebSocket:", error);
@@ -108,7 +124,9 @@ const connectWebSocket = () => {
 
 // Disconnect from WebSocket server - call this when user logs out
 const disconnectWebSocket = () => {
-  communitySocket.disconnect();
+  if (useRealSockets && communitySocket.connected) {
+    communitySocket.disconnect();
+  }
 };
 
 export const communityWebSocket = {

@@ -6,6 +6,7 @@ import { fileURLToPath } from "url";
 import fs from "fs";
 import connectDB from "./config/db.js";
 import { initAuth } from "./config/auth.js";
+import { logger } from "./utils/logger.js";
 
 // Import routes
 import userRoutes from "./routes/userRoutes.js";
@@ -22,10 +23,10 @@ dotenv.config();
 // Initialize Express app
 const app = express();
 let server = null;
-let io = null; 
+let io = null;
 let communityNamespace = null;
 
-// Make them available for other modules to import
+// Export socket variables (will remain null in production)
 export { io, communityNamespace };
 
 // Get dirname equivalent in ES modules (for local dev only)
@@ -118,7 +119,9 @@ app.get("/api/debug/files", (req, res) => {
           name: file,
           size: fs.statSync(path.join(profilesDir, file)).size,
           url: `/uploads/profiles/${file}`,
-          fullUrl: `${req.protocol}://${req.get("host")}/uploads/profiles/${file}`,
+          fullUrl: `${req.protocol}://${req.get(
+            "host"
+          )}/uploads/profiles/${file}`,
         }))
       : [];
 
@@ -139,7 +142,7 @@ app.get("/api/debug/files", (req, res) => {
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error("Server error:", err);
+  logger.error("Server error:", err);
   res.status(500).json({
     success: false,
     message: "Server error",
@@ -150,61 +153,79 @@ app.use((err, req, res, next) => {
   });
 });
 
-// For local development
+// For local development only
 if (process.env.NODE_ENV !== "production") {
   // Create HTTP server only for local development
   const createSocketServer = async () => {
-    const http = await import("http");
-    const { Server } = await import("socket.io");
-    
-    server = http.createServer(app);
-    io = new Server(server, {
-      cors: {
-        origin: "http://localhost:5173",
-        methods: ["GET", "POST", "PUT", "DELETE"],
-        credentials: true,
-      },
-    });
+    logger.info("Initializing Socket.io server for development");
+    try {
+      const http = await import("http");
+      const { Server } = await import("socket.io");
 
-    // Setup Socket.io namespaces
-    communityNamespace = io.of("/community");
-
-    // Socket.io event handlers
-    communityNamespace.on("connection", (socket) => {
-      console.log("New client connected to community namespace:", socket.id);
-
-      socket.on("join-topic", (topicId) => {
-        socket.join(`topic-${topicId}`);
-        console.log(`Client ${socket.id} joined topic-${topicId}`);
+      server = http.createServer(app);
+      io = new Server(server, {
+        cors: {
+          origin: "http://localhost:5173",
+          methods: ["GET", "POST", "PUT", "DELETE"],
+          credentials: true,
+        },
       });
 
-      socket.on("leave-topic", (topicId) => {
-        socket.leave(`topic-${topicId}`);
-        console.log(`Client ${socket.id} left topic-${topicId}`);
+      // Setup Socket.io namespaces
+      communityNamespace = io.of("/community");
+
+      // Socket.io event handlers
+      communityNamespace.on("connection", (socket) => {
+        logger.info(
+          `New client connected to community namespace: ${socket.id}`
+        );
+
+        socket.on("join-topic", (topicId) => {
+          socket.join(`topic-${topicId}`);
+          logger.debug(`Client ${socket.id} joined topic-${topicId}`);
+        });
+
+        socket.on("leave-topic", (topicId) => {
+          socket.leave(`topic-${topicId}`);
+          logger.debug(`Client ${socket.id} left topic-${topicId}`);
+        });
+
+        socket.on("disconnect", () => {
+          logger.info(`Client disconnected: ${socket.id}`);
+        });
       });
 
-      socket.on("disconnect", () => {
-        console.log("Client disconnected:", socket.id);
+      // Make the socket instances available globally
+      global.io = io;
+      global.communityNamespace = communityNamespace;
+
+      // Start server with Socket.io
+      const PORT = process.env.PORT || 5000;
+      server.listen(PORT, () => {
+        logger.info(
+          `Server with socket.io running on port ${PORT} in ${process.env.NODE_ENV} mode`
+        );
       });
-    });
-    
-    // Make the socket instances available globally
-    global.io = io;
-    global.communityNamespace = communityNamespace;
-    
-    // Start server with Socket.io
-    const PORT = process.env.PORT || 5000;
-    server.listen(PORT, () => {
-      console.log(`Server with socket.io running on port ${PORT} in ${process.env.NODE_ENV} mode`);
-    });
+    } catch (error) {
+      logger.error("Failed to initialize Socket.io:", error);
+      startExpressServer();
+    }
   };
 
   createSocketServer();
 } else {
-  // In production, just start the Express app
+  // In production (Vercel), don't attempt to use Socket.io
+  logger.info("Production environment detected - WebSockets disabled");
+  startExpressServer();
+}
+
+// Function to start Express server without Socket.io
+function startExpressServer() {
   const PORT = process.env.PORT || 5000;
   app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT} in ${process.env.NODE_ENV} mode`);
+    logger.info(
+      `Express server running on port ${PORT} in ${process.env.NODE_ENV} mode`
+    );
   });
 }
 

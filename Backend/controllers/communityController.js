@@ -72,12 +72,23 @@ const mockTopics = [
 // Helper to safely emit socket events (works in both environments)
 const safeEmitSocketEvent = (event, data, room = null) => {
   try {
+    // In production, socket events will be silently ignored
+    if (process.env.NODE_ENV === "production") {
+      return; // Skip socket events in production
+    }
+
     if (global.communityNamespace) {
       if (room) {
         global.communityNamespace.to(room).emit(event, data);
+        logger.debug(`Emitted ${event} to room ${room}`);
       } else {
         global.communityNamespace.emit(event, data);
+        logger.debug(`Emitted ${event} to all clients`);
       }
+    } else {
+      logger.debug(
+        `Socket event ${event} not emitted: namespace not available`
+      );
     }
   } catch (error) {
     logger.error(`Socket emit error (${event}):`, error);
