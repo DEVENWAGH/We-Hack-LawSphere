@@ -4,7 +4,7 @@ const connectDB = async () => {
   try {
     if (mongoose.connection.readyState === 1) {
       console.log("MongoDB already connected");
-      return;
+      return mongoose.connection;
     }
 
     // Add more robust error handling and retry logic
@@ -21,8 +21,8 @@ const connectDB = async () => {
     return conn;
   } catch (error) {
     console.error(`MongoDB connection error: ${error.message}`);
-    // Don't throw the error, handle it gracefully
-    return null;
+    // Don't exit the process in serverless, handle error gracefully
+    throw error; // Re-throw so the middleware can handle it
   }
 };
 
