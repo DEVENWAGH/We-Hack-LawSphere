@@ -5,10 +5,6 @@ import path from "path";
 import { fileURLToPath } from "url";
 import connectDB from "./config/db.js";
 import { initAuth } from "./config/auth.js";
-import fs from "fs";
-// Add Socket.io imports
-import http from "http";
-import { Server } from "socket.io";
 
 // Import routes
 import userRoutes from "./routes/userRoutes.js";
@@ -17,19 +13,15 @@ import resourceRoutes from "./routes/resourceRoutes.js";
 import communityRoutes from "./routes/communityRoutes.js";
 import aiRoutes from "./routes/aiRoutes.js";
 import consultationRoutes from "./routes/consultationRoutes.js";
+import healthRoutes from "./routes/healthRoutes.js";
 
 // Load environment variables
 dotenv.config();
 
-// Connect to MongoDB
-connectDB();
-
 // Initialize Express app
 const app = express();
-// Create HTTP server for Socket.io
-const server = http.createServer(app);
 
-// Get dirname equivalent in ES modules
+// Get dirname equivalent in ES modules (for local dev only)
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Middleware
@@ -39,62 +31,114 @@ app.use(
   cors({
     origin:
       process.env.NODE_ENV === "production"
-        ? [
-            "https://we-hack-law-sphere.vercel.app",
-            "https://lawsphere-api.vercel.app",
-          ]
-        : "http://localhost:5173",
+        ? "https://we-hack-law-sphere.vercel.app" // Frontend URL
+        : "http://localhost:5173", // Vite default port
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "Accept-Language"],
   })
 );
 
-// Serve static files from the uploads directory
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+// Connect to MongoDB only when needed (for Vercel)
+let dbConnected = false;
+const connectToDatabase = async () => {
+  try {
+    if (!dbConnected) {
+      await connectDB();
+      dbConnected = true;
+    }
+    return true;
+  } catch (error) {
+    console.error("Database connection error:", error);
+    return false;
+  }
+};
 
-// Serve static files from public directory (for test pages)
-app.use("/public", express.static(path.join(__dirname, "public")));
+// Middleware to ensure DB connection
+app.use(async (req, res, next) => {
+  try {
+    const connected = await connectToDatabase();
+    if (!connected) {
+      return res.status(500).json({
+        success: false,
+        message: "Database connection failed",
+      });
+    }
+    next();
+  } catch (error) {
+    console.error("Database connection middleware error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error connecting to database",
+    });
+  }
+});
 
 // Initialize Auth.js
 initAuth(app);
 
-// Initialize Socket.io with CORS settings
-const io = new Server(server, {
-  cors: {
-    origin:
-      process.env.NODE_ENV === "production"
-        ? "https://we-hack-law-sphere.vercel.app" // Frontend URL
-        : "http://localhost:5173",
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    credentials: true,
-  },
+// API routes
+app.use("/api/users", userRoutes);
+app.use("/api/lawyers", lawyerRoutes);
+app.use("/api/resources", resourceRoutes);
+app.use("/api/community", communityRoutes);
+app.use("/api/ai", aiRoutes);
+app.use("/api/consultations", consultationRoutes);
+app.use("/api/health", healthRoutes);
+
+// Root route
+app.get("/", (req, res) => {
+  res.json({ message: "Welcome to LawSphere API" });
 });
 
-// Setup Socket.io namespaces
-const communityNamespace = io.of("/community");
-
-// Socket.io event handlers
-communityNamespace.on("connection", (socket) => {
-  console.log("New client connected to community namespace:", socket.id);
-
-  // Join room for specific topics
-  socket.on("join-topic", (topicId) => {
-    socket.join(`topic-${topicId}`);
-    console.log(`Client ${socket.id} joined topic-${topicId}`);
-  });
-
-  // Leave topic room
-  socket.on("leave-topic", (topicId) => {
-    socket.leave(`topic-${topicId}`);
-    console.log(`Client ${socket.id} left topic-${topicId}`);
-  });
-
-  // Handle disconnection
-  socket.on("disconnect", () => {
-    console.log("Client disconnected:", socket.id);
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error("Server error:", err);
+  res.status(500).json({
+    success: false,
+    message: "Server error",
+    error:
+      process.env.NODE_ENV === "development"
+        ? err.message
+        : "Something went wrong",
   });
 });
+
+// For local development
+if (process.env.NODE_ENV !== "production") {
+  // Create HTTP server only for local development
+  import("http").then((http) => {
+    import("socket.io").then(({ Server }) => {
+      const server = http.createServer(app);
+      const io = new Server(server, {
+        cors: {
+          origin: "http://localhost:5173",
+          methods: ["GET", "POST", "PUT", "DELETE"],
+          credentials: true,
+        },
+      });
+
+      // Setup Socket.io namespaces
+      const communityNamespace = io.of("/community");
+
+      // Socket.io event handlers
+      communityNamespace.on("connection", (socket) => {
+        console.log("New client connected to community namespace:", socket.id);
+
+        socket.on("join-topic", (topicId) => {
+          socket.join(`topic-${topicId}`);
+          console.log(`Client ${socket.id} joined topic-${topicId}`);
+        });
+
+        socket.on("leave-topic", (topicId) => {
+          socket.leave(`topic-${topicId}`);
+          console.log(`Client ${socket.id} left topic-${topicId}`);
+        });
+
+        socket.on("disconnect", () => {
+          console.log("Client disconnected:", socket.id);
+        });
+      });
 
 // Export io for use in controllers
 export { io, communityNamespace };
@@ -165,20 +209,6 @@ app.use((err, req, res, next) => {
 // Start server
 const PORT = process.env.PORT || 5000;
 // Use 'server' instead of 'app' to start the server with Socket.io
-if (process.env.NODE_ENV !== "production") {
-  // Only start Socket.io server in development
-  // In production with Vercel serverless functions, we shouldn't start a long-running server
-  server.listen(PORT, () => {
-    console.log(
-      `Server running on port ${PORT} in ${process.env.NODE_ENV} mode`
-    );
-  });
-} else {
-  // In production, just export the Express app for serverless functions
-  console.log(
-    `Server configured for ${process.env.NODE_ENV} mode (serverless)`
-  );
-}
-
-// Make sure to export the Express app for Vercel
-export default app;
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT} in ${process.env.NODE_ENV} mode`);
+});

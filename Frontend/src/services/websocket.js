@@ -10,6 +10,7 @@ const communitySocket = io(`${API_URL}/community`, {
   reconnection: true,
   reconnectionAttempts: 5,
   reconnectionDelay: 1000,
+  timeout: 10000,
 });
 
 // Connection event handlers
@@ -18,12 +19,24 @@ communitySocket.on("connect", () => {
 });
 
 communitySocket.on("connect_error", (error) => {
-  console.error("Connection error:", error);
+  console.error("Socket connection error:", error);
+  // Don't repeatedly try to reconnect in production
+  if (import.meta.env.PROD) {
+    communitySocket.disconnect();
+  }
 });
 
 communitySocket.on("disconnect", (reason) => {
   console.log("Disconnected from WebSocket server:", reason);
 });
+
+// Create a fallback mechanism when sockets aren't available
+const socketFallback = {
+  connected: false,
+  emit: () => console.log("Socket fallback: emit called"),
+  on: () => console.log("Socket fallback: on called"),
+  off: () => console.log("Socket fallback: off called"),
+};
 
 // Event handlers setup - to be called from UI components
 const setupTopicListeners = (callbacks = {}) => {
@@ -77,8 +90,19 @@ const cleanupTopicListeners = () => {
 
 // Connect to WebSocket server - call this when user logs in
 const connectWebSocket = () => {
-  if (!communitySocket.connected) {
-    communitySocket.connect();
+  try {
+    if (!communitySocket.connected) {
+      // Only try to connect in development or if we're confident it will work
+      if (!import.meta.env.PROD) {
+        communitySocket.connect();
+      } else {
+        console.log(
+          "WebSocket connections not supported in production. Using fallback mode."
+        );
+      }
+    }
+  } catch (error) {
+    console.error("Error connecting to WebSocket:", error);
   }
 };
 

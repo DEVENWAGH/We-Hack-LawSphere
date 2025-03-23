@@ -1,5 +1,5 @@
 import TopicModel from "../models/Topic.js";
-import { communityNamespace } from "../server.js";
+import { logger } from "../utils/logger.js";
 
 // Create an in-memory store for topics during development
 const mockTopics = [
@@ -69,6 +69,21 @@ const mockTopics = [
   },
 ];
 
+// Helper to safely emit socket events (works in both environments)
+const safeEmitSocketEvent = (event, data, room = null) => {
+  try {
+    if (global.communityNamespace) {
+      if (room) {
+        global.communityNamespace.to(room).emit(event, data);
+      } else {
+        global.communityNamespace.emit(event, data);
+      }
+    }
+  } catch (error) {
+    logger.error(`Socket emit error (${event}):`, error);
+  }
+};
+
 /**
  * @desc    Get forum topics (with filters)
  * @route   GET /api/community/topics
@@ -83,10 +98,10 @@ export const getTopics = async (req, res) => {
       data: mockTopics,
     });
   } catch (error) {
-    console.error("Get topics error:", error);
+    logger.error("Get topics error:", error);
     res.status(500).json({
       success: false,
-      message: "Server error",
+      message: "Server error retrieving topics",
       error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
@@ -131,9 +146,10 @@ export const getCategories = async (req, res) => {
       data: categories,
     });
   } catch (error) {
+    logger.error("Get categories error:", error);
     res.status(500).json({
       success: false,
-      message: "Server error",
+      message: "Server error retrieving categories",
       error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
@@ -161,9 +177,10 @@ export const getTopicById = async (req, res) => {
       data: topic,
     });
   } catch (error) {
+    logger.error("Get topic by ID error:", error);
     res.status(500).json({
       success: false,
-      message: "Server error",
+      message: "Server error retrieving topic",
       error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
@@ -199,17 +216,18 @@ export const createTopic = async (req, res) => {
     // Add to our mock data store
     mockTopics.unshift(newTopic); // Add to beginning of array so it appears first
 
-    // Emit WebSocket event for new topic
-    communityNamespace.emit("new-topic", newTopic);
+    // Emit WebSocket event for new topic (safely)
+    safeEmitSocketEvent("new-topic", newTopic);
 
     res.status(201).json({
       success: true,
       data: newTopic,
     });
   } catch (error) {
+    logger.error("Create topic error:", error);
     res.status(500).json({
       success: false,
-      message: "Server error",
+      message: "Server error creating topic",
       error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
@@ -295,21 +313,26 @@ export const addReply = async (req, res) => {
     // Increment reply count
     topic.replies = topic.replies ? topic.replies.length : 1;
 
-    // Emit WebSocket event for new reply
-    communityNamespace.to(`topic-${topicId}`).emit("new-reply", {
-      topicId,
-      reply: newReply,
-      parentId,
-    });
+    // Emit WebSocket event for new reply (safely)
+    safeEmitSocketEvent(
+      "new-reply",
+      {
+        topicId,
+        reply: newReply,
+        parentId,
+      },
+      `topic-${topicId}`
+    );
 
     res.json({
       success: true,
       data: newReply,
     });
   } catch (error) {
+    logger.error("Add reply error:", error);
     res.status(500).json({
       success: false,
-      message: "Server error",
+      message: "Server error adding reply",
       error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
@@ -337,8 +360,8 @@ export const upvoteTopic = async (req, res) => {
     // Increment vote score
     topic.voteScore += 1;
 
-    // Emit WebSocket event for topic vote update
-    communityNamespace.emit("topic-vote-update", {
+    // Emit WebSocket event for topic vote update (safely)
+    safeEmitSocketEvent("topic-vote-update", {
       topicId,
       voteScore: topic.voteScore,
     });
@@ -351,9 +374,10 @@ export const upvoteTopic = async (req, res) => {
       },
     });
   } catch (error) {
+    logger.error("Upvote topic error:", error);
     res.status(500).json({
       success: false,
-      message: "Server error",
+      message: "Server error upvoting topic",
       error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
@@ -381,8 +405,8 @@ export const downvoteTopic = async (req, res) => {
     // Decrement vote score
     topic.voteScore -= 1;
 
-    // Emit WebSocket event for topic vote update
-    communityNamespace.emit("topic-vote-update", {
+    // Emit WebSocket event for topic vote update (safely)
+    safeEmitSocketEvent("topic-vote-update", {
       topicId,
       voteScore: topic.voteScore,
     });
@@ -395,9 +419,10 @@ export const downvoteTopic = async (req, res) => {
       },
     });
   } catch (error) {
+    logger.error("Downvote topic error:", error);
     res.status(500).json({
       success: false,
-      message: "Server error",
+      message: "Server error downvoting topic",
       error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
@@ -456,12 +481,16 @@ export const upvoteReply = async (req, res) => {
       });
     }
 
-    // Emit WebSocket event for reply vote update
-    communityNamespace.to(`topic-${topicId}`).emit("reply-vote-update", {
-      topicId,
-      replyId,
-      voteScore,
-    });
+    // Emit WebSocket event for reply vote update (safely)
+    safeEmitSocketEvent(
+      "reply-vote-update",
+      {
+        topicId,
+        replyId,
+        voteScore,
+      },
+      `topic-${topicId}`
+    );
 
     res.json({
       success: true,
@@ -471,9 +500,10 @@ export const upvoteReply = async (req, res) => {
       },
     });
   } catch (error) {
+    logger.error("Upvote reply error:", error);
     res.status(500).json({
       success: false,
-      message: "Server error",
+      message: "Server error upvoting reply",
       error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
@@ -532,12 +562,16 @@ export const downvoteReply = async (req, res) => {
       });
     }
 
-    // Emit WebSocket event for reply vote update
-    communityNamespace.to(`topic-${topicId}`).emit("reply-vote-update", {
-      topicId,
-      replyId,
-      voteScore,
-    });
+    // Emit WebSocket event for reply vote update (safely)
+    safeEmitSocketEvent(
+      "reply-vote-update",
+      {
+        topicId,
+        replyId,
+        voteScore,
+      },
+      `topic-${topicId}`
+    );
 
     res.json({
       success: true,
@@ -547,9 +581,10 @@ export const downvoteReply = async (req, res) => {
       },
     });
   } catch (error) {
+    logger.error("Downvote reply error:", error);
     res.status(500).json({
       success: false,
-      message: "Server error",
+      message: "Server error downvoting reply",
       error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }

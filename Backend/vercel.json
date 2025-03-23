@@ -9,14 +9,26 @@
   "routes": [
     {
       "src": "/(.*)",
+<<<<<<< HEAD
       "dest": "server.js"
+=======
+      "dest": "/server.js"
+>>>>>>> 23e6a4d227c13106c0a75eb6af56f7233e06e69c
     }
   ],
   "env": {
     "NODE_ENV": "production"
   },
+<<<<<<< HEAD
   "functions": {
     "api/**": {
+=======
+  "github": {
+    "silent": true
+  },
+  "functions": {
+    "server.js": {
+>>>>>>> 23e6a4d227c13106c0a75eb6af56f7233e06e69c
       "memory": 1024,
       "maxDuration": 10
     }
