@@ -3,6 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
+import fs from "fs";
 import connectDB from "./config/db.js";
 import { initAuth } from "./config/auth.js";
 
@@ -20,6 +21,12 @@ dotenv.config();
 
 // Initialize Express app
 const app = express();
+let server = null;
+let io = null; 
+let communityNamespace = null;
+
+// Make them available for other modules to import
+export { io, communityNamespace };
 
 // Get dirname equivalent in ES modules (for local dev only)
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -91,71 +98,6 @@ app.get("/", (req, res) => {
   res.json({ message: "Welcome to LawSphere API" });
 });
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error("Server error:", err);
-  res.status(500).json({
-    success: false,
-    message: "Server error",
-    error:
-      process.env.NODE_ENV === "development"
-        ? err.message
-        : "Something went wrong",
-  });
-});
-
-// For local development
-if (process.env.NODE_ENV !== "production") {
-  // Create HTTP server only for local development
-  import("http").then((http) => {
-    import("socket.io").then(({ Server }) => {
-      const server = http.createServer(app);
-      const io = new Server(server, {
-        cors: {
-          origin: "http://localhost:5173",
-          methods: ["GET", "POST", "PUT", "DELETE"],
-          credentials: true,
-        },
-      });
-
-      // Setup Socket.io namespaces
-      const communityNamespace = io.of("/community");
-
-      // Socket.io event handlers
-      communityNamespace.on("connection", (socket) => {
-        console.log("New client connected to community namespace:", socket.id);
-
-        socket.on("join-topic", (topicId) => {
-          socket.join(`topic-${topicId}`);
-          console.log(`Client ${socket.id} joined topic-${topicId}`);
-        });
-
-        socket.on("leave-topic", (topicId) => {
-          socket.leave(`topic-${topicId}`);
-          console.log(`Client ${socket.id} left topic-${topicId}`);
-        });
-
-        socket.on("disconnect", () => {
-          console.log("Client disconnected:", socket.id);
-        });
-      });
-
-// Export io for use in controllers
-export { io, communityNamespace };
-
-// Routes
-app.use("/api/users", userRoutes);
-app.use("/api/lawyers", lawyerRoutes);
-app.use("/api/resources", resourceRoutes);
-app.use("/api/community", communityRoutes);
-app.use("/api/ai", aiRoutes);
-app.use("/api/consultations", consultationRoutes);
-
-// Root route
-app.get("/", (req, res) => {
-  res.json({ message: "Welcome to LawSphere API" });
-});
-
 // Debug route to check file paths
 app.get("/api/debug/files", (req, res) => {
   const uploadsDir = path.join(__dirname, "uploads");
@@ -176,9 +118,7 @@ app.get("/api/debug/files", (req, res) => {
           name: file,
           size: fs.statSync(path.join(profilesDir, file)).size,
           url: `/uploads/profiles/${file}`,
-          fullUrl: `${req.protocol}://${req.get(
-            "host"
-          )}/uploads/profiles/${file}`,
+          fullUrl: `${req.protocol}://${req.get("host")}/uploads/profiles/${file}`,
         }))
       : [];
 
@@ -199,16 +139,73 @@ app.get("/api/debug/files", (req, res) => {
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  console.error("Server error:", err);
   res.status(500).json({
-    message: err.message,
-    stack: process.env.NODE_ENV === "production" ? null : err.stack,
+    success: false,
+    message: "Server error",
+    error:
+      process.env.NODE_ENV === "development"
+        ? err.message
+        : "Something went wrong",
   });
 });
 
-// Start server
-const PORT = process.env.PORT || 5000;
-// Use 'server' instead of 'app' to start the server with Socket.io
-server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT} in ${process.env.NODE_ENV} mode`);
-});
+// For local development
+if (process.env.NODE_ENV !== "production") {
+  // Create HTTP server only for local development
+  const createSocketServer = async () => {
+    const http = await import("http");
+    const { Server } = await import("socket.io");
+    
+    server = http.createServer(app);
+    io = new Server(server, {
+      cors: {
+        origin: "http://localhost:5173",
+        methods: ["GET", "POST", "PUT", "DELETE"],
+        credentials: true,
+      },
+    });
+
+    // Setup Socket.io namespaces
+    communityNamespace = io.of("/community");
+
+    // Socket.io event handlers
+    communityNamespace.on("connection", (socket) => {
+      console.log("New client connected to community namespace:", socket.id);
+
+      socket.on("join-topic", (topicId) => {
+        socket.join(`topic-${topicId}`);
+        console.log(`Client ${socket.id} joined topic-${topicId}`);
+      });
+
+      socket.on("leave-topic", (topicId) => {
+        socket.leave(`topic-${topicId}`);
+        console.log(`Client ${socket.id} left topic-${topicId}`);
+      });
+
+      socket.on("disconnect", () => {
+        console.log("Client disconnected:", socket.id);
+      });
+    });
+    
+    // Make the socket instances available globally
+    global.io = io;
+    global.communityNamespace = communityNamespace;
+    
+    // Start server with Socket.io
+    const PORT = process.env.PORT || 5000;
+    server.listen(PORT, () => {
+      console.log(`Server with socket.io running on port ${PORT} in ${process.env.NODE_ENV} mode`);
+    });
+  };
+
+  createSocketServer();
+} else {
+  // In production, just start the Express app
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT} in ${process.env.NODE_ENV} mode`);
+  });
+}
+
+export default app;
