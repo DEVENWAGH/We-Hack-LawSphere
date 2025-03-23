@@ -39,9 +39,14 @@ app.use(
   cors({
     origin:
       process.env.NODE_ENV === "production"
-        ? "https://we-hack-law-sphere.vercel.app" // Frontend URL
-        : "http://localhost:5173", // Vite default port
+        ? [
+            "https://we-hack-law-sphere.vercel.app",
+            "https://lawsphere-api.vercel.app",
+          ]
+        : "http://localhost:5173",
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "Accept-Language"],
   })
 );
 
@@ -160,6 +165,20 @@ app.use((err, req, res, next) => {
 // Start server
 const PORT = process.env.PORT || 5000;
 // Use 'server' instead of 'app' to start the server with Socket.io
-server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT} in ${process.env.NODE_ENV} mode`);
-});
+if (process.env.NODE_ENV !== "production") {
+  // Only start Socket.io server in development
+  // In production with Vercel serverless functions, we shouldn't start a long-running server
+  server.listen(PORT, () => {
+    console.log(
+      `Server running on port ${PORT} in ${process.env.NODE_ENV} mode`
+    );
+  });
+} else {
+  // In production, just export the Express app for serverless functions
+  console.log(
+    `Server configured for ${process.env.NODE_ENV} mode (serverless)`
+  );
+}
+
+// Make sure to export the Express app for Vercel
+export default app;

@@ -1,9 +1,11 @@
 import axios from "axios";
 import { getCurrentLanguage } from "../utils/translations.js";
 
-const API_URL = import.meta.env.PROD
-  ? "https://lawsphere-api.vercel.app/api" // Updated production API URL
-  : "http://localhost:5000/api";
+const API_URL =
+  import.meta.env.VITE_APP_Backend_BaseUrl ||
+  (import.meta.env.PROD
+    ? "https://lawsphere-api.vercel.app/api"
+    : "http://localhost:5000/api");
 
 // Create axios instance
 const api = axios.create({

@@ -16,5 +16,8 @@
         }
       ]
     }
-  ]
+  ],
+  "env": {
+    "VITE_APP_Backend_BaseUrl": "https://lawsphere-api.vercel.app/api"
+  }
 }
