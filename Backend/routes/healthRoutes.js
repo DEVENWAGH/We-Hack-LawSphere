@@ -7,10 +7,10 @@ const router = express.Router();
 router.get("/", (req, res) => {
   try {
     logger.info("Health check requested");
-    
+
     // Test MongoDB connection
     const dbStatus = req.dbConnected ? "connected" : "not connected";
-    
+
     res.json({
       status: "ok",
       message: "LawSphere API is running",
@@ -33,15 +33,21 @@ router.get("/diagnostic", (req, res) => {
   try {
     // Get memory usage
     const memoryUsage = process.memoryUsage();
-    
+
     res.json({
       status: "ok",
       env: process.env.NODE_ENV,
       memory: {
-        rss: `${Math.round(memoryUsage.rss / 1024 / 1024 * 100) / 100} MB`,
-        heapTotal: `${Math.round(memoryUsage.heapTotal / 1024 / 1024 * 100) / 100} MB`,
-        heapUsed: `${Math.round(memoryUsage.heapUsed / 1024 / 1024 * 100) / 100} MB`,
-        external: `${Math.round(memoryUsage.external / 1024 / 1024 * 100) / 100} MB`,
+        rss: `${Math.round((memoryUsage.rss / 1024 / 1024) * 100) / 100} MB`,
+        heapTotal: `${
+          Math.round((memoryUsage.heapTotal / 1024 / 1024) * 100) / 100
+        } MB`,
+        heapUsed: `${
+          Math.round((memoryUsage.heapUsed / 1024 / 1024) * 100) / 100
+        } MB`,
+        external: `${
+          Math.round((memoryUsage.external / 1024 / 1024) * 100) / 100
+        } MB`,
       },
       uptime: `${Math.round(process.uptime() * 100) / 100} seconds`,
       timestamp: new Date().toISOString(),

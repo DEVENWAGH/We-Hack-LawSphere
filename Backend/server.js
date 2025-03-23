@@ -29,10 +29,7 @@ app.use(express.json({ limit: "50mb" })); // Increased limit for base64 images
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 app.use(
   cors({
-    origin: [
-      "https://we-hack-law-sphere.vercel.app",
-      "http://localhost:5173"
-    ],
+    origin: ["https://we-hack-law-sphere.vercel.app", "http://localhost:5173"],
     credentials: true,
   })
 );
@@ -57,17 +54,17 @@ app.use(async (req, res, next) => {
   try {
     const connected = await connectToDatabase();
     if (!connected) {
-      return res.status(500).json({ 
-        success: false, 
-        message: "Database connection failed" 
+      return res.status(500).json({
+        success: false,
+        message: "Database connection failed",
       });
     }
     next();
   } catch (error) {
     console.error("Database connection middleware error:", error);
-    return res.status(500).json({ 
-      success: false, 
-      message: "Server error connecting to database" 
+    return res.status(500).json({
+      success: false,
+      message: "Server error connecting to database",
     });
   }
 });
@@ -95,7 +92,10 @@ app.use((err, req, res, next) => {
   res.status(500).json({
     success: false,
     message: "Server error",
-    error: process.env.NODE_ENV === "development" ? err.message : "Something went wrong"
+    error:
+      process.env.NODE_ENV === "development"
+        ? err.message
+        : "Something went wrong",
   });
 });
 
@@ -110,9 +110,9 @@ if (process.env.NODE_ENV !== "production") {
           origin: "http://localhost:5173",
           methods: ["GET", "POST", "PUT", "DELETE"],
           credentials: true,
-        }
+        },
       });
-      
+
       // Setup Socket.io namespaces
       const communityNamespace = io.of("/community");
 
@@ -142,7 +142,9 @@ if (process.env.NODE_ENV !== "production") {
       // Start server for local dev
       const PORT = process.env.PORT || 5000;
       server.listen(PORT, () => {
-        console.log(`Server running on port ${PORT} in ${process.env.NODE_ENV} mode`);
+        console.log(
+          `Server running on port ${PORT} in ${process.env.NODE_ENV} mode`
+        );
       });
     });
   });
@@ -153,10 +155,13 @@ if (process.env.NODE_ENV !== "production") {
     emit: () => console.log("Socket.io emit called in serverless environment"),
     to: (room) => ({
       emit: (...args) => {
-        console.log(`Socket.io room ${room} emit called in serverless:`, args[0]);
+        console.log(
+          `Socket.io room ${room} emit called in serverless:`,
+          args[0]
+        );
         return true;
-      }
-    })
+      },
+    }),
   };
 }
 
